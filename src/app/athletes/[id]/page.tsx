@@ -67,7 +67,7 @@ export default async function AthleteDetailPage({ params }: PageProps<"/athletes
             </div>
             <p className="mt-5 max-w-2xl text-base leading-7 text-[#bfcde0] sm:text-lg">{athlete.biography}</p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <OpenGraphLink type="Athlete" id={athlete.id} />
+              <OpenGraphLink type="Athlete" id={athlete.id}>Исследовать точные связи</OpenGraphLink>
               <AskAtlasLink question={`На каких Олимпиадах выступал ${athlete.fullName}?`}>Спросить о выступлениях</AskAtlasLink>
             </div>
             {scoreboard.total > 0 && <dl className="atlas-profile-medals mt-7" aria-label="Подтверждённые медальные результаты в базе">

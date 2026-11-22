@@ -136,6 +136,7 @@ test("expanded content links move from countries and sports to athletes and Game
 
 test("graph search, neighborhoods, sources and navigation from a logical answer", async ({ page }) => {
   await page.goto("/knowledge-graph");
+  await page.getByRole("link", { name: "Исследование связей", exact: true }).click();
   await page.getByRole("searchbox", { name: "Поиск по графу" }).fill("Симона Байлз");
   await page.getByRole("button", { name: "Найти", exact: true }).click();
   await page.getByRole("button", { name: /Симона Байлз/ }).first().click();

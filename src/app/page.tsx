@@ -102,7 +102,7 @@ export default async function Home() {
         <p className="atlas-kicker"><Network size={16} aria-hidden />Граф знаний</p>
         <h2 className="atlas-display">Как связаны Игры</h2>
         <p className="mt-4 max-w-md text-base leading-7 text-[#b4bfd0]">Проследите связи от олимпийского издания к спортсменам, соревнованиям и источникам.</p>
-        <Link className="atlas-action mt-6" href="/knowledge-graph">Открыть граф <ArrowUpRight size={18} aria-hidden /></Link>
+        <Link className="atlas-action mt-6" href="/knowledge-graph">Исследовать Олимпийскую вселенную <ArrowUpRight size={18} aria-hidden /></Link>
       </Reveal>
       <div className="atlas-graph-preview">
         <div className="atlas-graph-preview-bar">

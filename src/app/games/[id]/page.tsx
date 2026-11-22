@@ -52,6 +52,7 @@ export default async function GameDetailPage({ params, searchParams }: PageProps
         <div className="flex flex-wrap gap-3">
           <Link href="/games" className="inline-flex min-h-11 w-fit items-center gap-2 rounded-full border border-white/15 bg-[#07101d]/55 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:border-white/30"><ArrowLeft className="size-4" />Все издания</Link>
           <OpenGraphLink type="OlympicEdition" id={game.id} />
+          <Link href={`/knowledge-graph?edition=${encodeURIComponent(game.slug)}`} className="atlas-action">Открыть на карте Олимпийской вселенной</Link>
           <Link href={{ pathname: "/compare/games", query: { a: game.slug } }} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/15 bg-[#07101d]/55 px-4 py-2 text-sm font-semibold text-white hover:border-white/30"><ArrowLeftRight className="size-4 text-[#d6ad60]" />Сравнить издание</Link>
           {!isCancelled && <AskAtlasLink question={`Какие спортсмены участвовали в ${game.hostCity} ${game.year}?`}>Спросить об участниках</AskAtlasLink>}
         </div>
