@@ -155,7 +155,7 @@ async function eventMedals(edition: GraphNode, event: GraphNode, medal: Medal): 
 
 async function editionSports(edition: GraphNode): Promise<RuleResult> {
   const id = idOf(edition);
-  const rows = await prisma.$queryRaw<{ id: number; label: string; eventId: number | null; event: string | null; disciplineId: number | null; discipline: string | null; entryId: number | null }[]>`
+  const rows = await prisma.$queryRaw<{ id: number; label: string; eventId: number | null; event: string | null; disciplineId: number | null; discipline: string | null; entryId: bigint | number | null }[]>`
     WITH sportIds AS (
       SELECT d.sportId FROM Event e JOIN Discipline d ON d.id=e.disciplineId WHERE e.editionId=${id}
       UNION SELECT p.sportId FROM Participation p WHERE p.editionId=${id}
@@ -176,7 +176,7 @@ async function editionSports(edition: GraphNode): Promise<RuleResult> {
           record("Event", row.eventId, `${row.event} · ${edition.label}`),
           record("Discipline", row.disciplineId, `${row.discipline} · ${row.label}`),
         ] : []),
-        ...(row.entryId ? [record("Participation", row.entryId, `${edition.label} · ${row.label}`)] : []),
+        ...(row.entryId ? [record("Participation", Number(row.entryId), `${edition.label} · ${row.label}`)] : []),
       ],
       proof: { start: edition.id, edges: row.eventId && row.disciplineId
         ? [`edition-event:${row.eventId}`, `event-discipline:${row.eventId}`, `discipline-sport:${row.disciplineId}`]
