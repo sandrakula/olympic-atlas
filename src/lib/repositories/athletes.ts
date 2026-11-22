@@ -2,7 +2,7 @@ import { cache } from "react";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
-export type AthleteFilters = { query?: string; country?: string; sport?: string; edition?: string; season?: "SUMMER" | "WINTER"; medal?: "any" | "GOLD" | "SILVER" | "BRONZE"; sort?: "name" | "medals" | "gold" | "recent"; page?: number; pageSize?: number };
+export type AthleteFilters = { query?: string; country?: string; sport?: string; edition?: string; season?: "SUMMER" | "WINTER"; medal?: "any" | "GOLD" | "SILVER" | "BRONZE"; sort?: "featured" | "name" | "medals" | "gold" | "recent"; page?: number; pageSize?: number };
 type RankedAthlete = { id: number; medalCount: bigint; goldCount: bigint; lastYear: number | null };
 
 function nameCondition(query?: string) {
@@ -24,7 +24,11 @@ export async function getAthleteCatalog(filters: AthleteFilters = {}) {
   const conditions: Prisma.Sql[] = [];
   const matchesName = nameCondition(filters.query);
   if (matchesName) conditions.push(matchesName);
-  if (filters.country) conditions.push(Prisma.sql`(c.code = ${filters.country} OR EXISTS (SELECT 1 FROM Participation p JOIN NationalOlympicCommittee n ON n.id=p.nocId WHERE p.athleteId=a.id AND n.code=${filters.country}))`);
+  if (filters.country) conditions.push(Prisma.sql`(c.code = ${filters.country} OR EXISTS (
+    SELECT 1 FROM Participation p JOIN NationalOlympicCommittee n ON n.id=p.nocId
+    LEFT JOIN Country represented ON represented.id = n.countryId
+    WHERE p.athleteId = a.id AND (n.code = ${filters.country} OR represented.code = ${filters.country})
+  ))`);
   if (filters.sport) conditions.push(Prisma.sql`(a.specialty = ${filters.sport} OR EXISTS (SELECT 1 FROM Participation p JOIN Sport s ON s.id=p.sportId WHERE p.athleteId=a.id AND s.slug=${filters.sport}))`);
   if (filters.edition) conditions.push(Prisma.sql`EXISTS (SELECT 1 FROM Participation p JOIN OlympicEdition oe ON oe.id=p.editionId WHERE p.athleteId=a.id AND oe.slug=${filters.edition})`);
   if (filters.season) conditions.push(Prisma.sql`EXISTS (SELECT 1 FROM Participation p JOIN OlympicEdition oe ON oe.id=p.editionId WHERE p.athleteId=a.id AND oe.season=${filters.season})`);
@@ -33,7 +37,13 @@ export async function getAthleteCatalog(filters: AthleteFilters = {}) {
     conditions.push(Prisma.sql`(EXISTS (SELECT 1 FROM MedalResult mr WHERE mr.athleteId=a.id ${medalCondition}) OR EXISTS (SELECT 1 FROM TeamMember tm JOIN MedalResult mr ON mr.teamId=tm.teamId WHERE tm.athleteId=a.id ${medalCondition}))`);
   }
   const where = conditions.length ? Prisma.sql`WHERE ${Prisma.join(conditions, " AND ")}` : Prisma.empty;
-  const order = ({ name: "a.fullName COLLATE NOCASE ASC", medals: "medalCount DESC, a.fullName COLLATE NOCASE ASC", gold: "goldCount DESC, medalCount DESC, a.fullName COLLATE NOCASE ASC", recent: "lastYear DESC NULLS LAST, a.fullName COLLATE NOCASE ASC" } as const)[filters.sort ?? "name"];
+  const order = ({
+    featured: "a.imageUrl LIKE '/images/athletes/%' DESC, a.imageUrl IS NOT NULL DESC, medalCount DESC, a.fullName COLLATE NOCASE ASC",
+    name: "a.fullName COLLATE NOCASE ASC",
+    medals: "medalCount DESC, a.fullName COLLATE NOCASE ASC",
+    gold: "goldCount DESC, medalCount DESC, a.fullName COLLATE NOCASE ASC",
+    recent: "lastYear DESC NULLS LAST, a.fullName COLLATE NOCASE ASC",
+  })[filters.sort ?? "name"];
   const [ranked, countRows] = await Promise.all([
     prisma.$queryRaw<RankedAthlete[]>(Prisma.sql`
       SELECT a.id,
@@ -45,9 +55,19 @@ export async function getAthleteCatalog(filters: AthleteFilters = {}) {
     prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`SELECT COUNT(*) AS count FROM Athlete a LEFT JOIN Country c ON c.id=a.countryId ${where}`),
   ]);
   const ids = ranked.map((row) => row.id);
-  const rows = ids.length ? await prisma.athlete.findMany({ where: { id: { in: ids } }, include: {
-    country: true,
-    participations: { orderBy: { edition: { year: "desc" } }, include: { edition: true, noc: true, sport: true } },
+  const countryLabel = { code: true, name: true, activeTo: true } as const;
+  const rows = ids.length ? await prisma.athlete.findMany({ where: { id: { in: ids } }, select: {
+    id: true, slug: true, fullName: true, specialty: true, imageUrl: true, imageAlt: true,
+    country: { select: countryLabel },
+    participations: {
+      take: 1, orderBy: [{ edition: { year: "desc" } }, { id: "asc" }],
+      select: {
+        edition: { select: { year: true } },
+        noc: { select: { code: true, name: true, country: { select: countryLabel } } },
+        sport: { select: { slug: true, name: true } },
+      },
+    },
+    _count: { select: { participations: true } },
   } }) : [];
   const byId = new Map(rows.map((row) => [row.id, row]));
   const athletes = ranked.map((rank) => ({ ...byId.get(rank.id)!, medalCount: Number(rank.medalCount), goldCount: Number(rank.goldCount), lastYear: rank.lastYear }));
@@ -67,13 +87,12 @@ export const getAthleteFacets = cache(async () => {
 });
 
 export const getAthleteStats = cache(async () => {
-  const [athletes, photos, participations, medalResults, countries, sports] = await Promise.all([
-    prisma.athlete.count(), prisma.athlete.count({ where: { imageUrl: { not: null } } }), prisma.participation.count(), prisma.medalResult.count(),
-    prisma.country.findMany({ where: { athletes: { some: {} } }, select: { name: true, _count: { select: { athletes: true } } }, orderBy: { athletes: { _count: "desc" } }, take: 8 }),
-    prisma.participation.groupBy({ by: ["sportId"], _count: true, orderBy: { _count: { sportId: "desc" } }, take: 8 }),
+  const [photos, participations, medalResults] = await Promise.all([
+    prisma.athlete.count({ where: { imageUrl: { not: null, notIn: [""] } } }),
+    prisma.participation.count(),
+    prisma.medalResult.count(),
   ]);
-  const sportNames = await prisma.sport.findMany({ where: { id: { in: sports.map((item) => item.sportId) } }, select: { id: true, name: true } });
-  return { athletes, photos, participations, medalResults, countries: countries.map((item) => ({ name: item.name, value: item._count.athletes })), sports: sports.map((item) => ({ name: sportNames.find((sport) => sport.id === item.sportId)?.name ?? "Другое", value: item._count })) };
+  return { photos, participations, medalResults };
 });
 
 export const getAthleteProfile = cache(async (identifier: string) => {
@@ -85,7 +104,8 @@ export const getAthleteProfile = cache(async (identifier: string) => {
   if (numericId !== null && (!Number.isSafeInteger(numericId) || numericId > 2_147_483_647)) return null;
   const athlete = await prisma.athlete.findFirst({ where: numericId !== null ? { id: numericId } : { slug }, include: {
     country: true,
-    participations: { orderBy: { edition: { year: "desc" } }, include: { edition: true, noc: true, sport: true } },
+    participations: { orderBy: { edition: { year: "desc" } }, include: { edition: true, noc: { include: { country: true } }, sport: true,
+      disciplines: { select: { discipline: { select: { name: true } } } } } },
     medalResults: { include: { event: { include: { edition: true, discipline: { include: { sport: true } } } }, noc: true } },
     teamMemberships: { include: { team: { include: { noc: true, edition: true, event: { include: { discipline: { include: { sport: true } }, edition: true } }, medalResults: true } } } },
   } });
@@ -114,17 +134,55 @@ export async function getAthleteComparison(first?: string, second?: string) {
   return [a, b] as const;
 }
 
-export async function getCountryDirectory() {
+export async function getCountryDirectory(query: string, requestedPage: number) {
+  const search = query.trim().slice(0, 100);
+  const names = [...new Set([search, search.toLowerCase(), search.charAt(0).toUpperCase() + search.slice(1).toLowerCase()])];
+  const where: Prisma.CountryWhereInput = search ? { OR: [
+    ...names.map((term) => ({ name: { contains: term } })),
+    { code: search.toUpperCase() },
+    { committees: { some: { code: search.toUpperCase() } } },
+  ] } : {};
+  const pageSize = 36;
+  const total = await prisma.country.count({ where });
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Number.isSafeInteger(requestedPage) ? Math.min(pages, Math.max(1, requestedPage)) : 1;
   const [countries, nocs] = await Promise.all([
-    prisma.country.findMany({ orderBy: { name: "asc" }, select: { code: true, name: true, region: true, historicalName: true, _count: { select: { athletes: true } }, committees: { select: { id: true, code: true, name: true, validFrom: true, validTo: true, _count: { select: { participations: true, medalResults: true } } } } } }),
-    prisma.nationalOlympicCommittee.findMany({ where: { countryId: null }, orderBy: { code: "asc" }, select: { id: true, code: true, name: true, historicalNote: true, validFrom: true, validTo: true, _count: { select: { participations: true, medalResults: true } } } }),
+    prisma.country.findMany({ where, orderBy: [{ name: "asc" }, { id: "asc" }], skip: (page - 1) * pageSize, take: pageSize, select: { code: true, name: true, region: true, historicalName: true, activeFrom: true, activeTo: true, _count: { select: { athletes: true } }, committees: { select: { id: true, code: true, name: true, validFrom: true, validTo: true, _count: { select: { participations: true, medalResults: true } } } } } }),
+    prisma.nationalOlympicCommittee.findMany({ where: { countryId: null, ...(search ? { OR: [{ code: search.toUpperCase() }, ...names.map((term) => ({ name: { contains: term } }))] } : {}) }, orderBy: { code: "asc" }, select: { id: true, code: true, name: true, historicalNote: true, validFrom: true, validTo: true, _count: { select: { participations: true, medalResults: true } } } }),
   ]);
-  return { countries, independentNocs: nocs };
+  return { countries, independentNocs: nocs, total, page, pages, search };
 }
 
-export const getCountryProfile = cache(async (code: string) => prisma.country.findUnique({ where: { code: code.toUpperCase() }, include: {
-  _count: { select: { athletes: true } },
-  hostedEditions: { select: { slug: true, name: true }, where: { status: "HELD" }, orderBy: { year: "desc" } },
-  committees: { include: { participations: { include: { athlete: true, edition: true, sport: true } }, medalResults: true } },
-  athletes: { orderBy: { fullName: "asc" }, take: 48, include: { country: true, participations: { include: { edition: true, noc: true, sport: true } }, medalResults: true, teamMemberships: { include: { team: { include: { medalResults: true } } } } } },
-}}));
+export const getCountryProfile = cache(async (code: string) => {
+  const country = await prisma.country.findUnique({ where: { code: code.toUpperCase() }, include: {
+    _count: { select: { athletes: true } },
+    hostedEditions: { select: { slug: true, name: true }, where: { status: "HELD" }, orderBy: { year: "desc" } },
+    committees: { include: { _count: { select: { participations: true, medalResults: true } } } },
+  } });
+  if (!country) return null;
+  const [rows, counts] = await Promise.all([
+    prisma.$queryRaw<{ id: number }[]>`
+      WITH linked AS (
+        SELECT id FROM Athlete WHERE countryId = ${country.id}
+        UNION SELECT p.athleteId FROM Participation p JOIN NationalOlympicCommittee n ON n.id = p.nocId WHERE n.countryId = ${country.id}
+      )
+      SELECT a.id FROM linked JOIN Athlete a ON a.id = linked.id
+      ORDER BY a.imageUrl IS NOT NULL DESC, a.fullName COLLATE NOCASE, a.id LIMIT 12
+    `,
+    prisma.$queryRaw<{ editions: bigint; sports: bigint }[]>`
+      SELECT COUNT(DISTINCT p.editionId) editions, COUNT(DISTINCT p.sportId) sports
+      FROM Participation p JOIN NationalOlympicCommittee n ON n.id = p.nocId WHERE n.countryId = ${country.id}
+    `,
+  ]);
+  const athletes = rows.length ? await prisma.athlete.findMany({
+    where: { id: { in: rows.map(({ id }) => id) } },
+    select: { id: true, fullName: true, slug: true, imageUrl: true, imageAlt: true, specialty: true,
+      participations: { take: 1, orderBy: { edition: { year: "desc" } }, select: { sport: { select: { name: true, slug: true } }, edition: { select: { year: true } }, noc: { select: { name: true, code: true, country: { select: { code: true, name: true, activeTo: true } } } } } } },
+  }) : [];
+  const byId = new Map(athletes.map((athlete) => [athlete.id, athlete]));
+  return {
+    ...country, athletes: rows.flatMap(({ id }) => byId.get(id) ?? []),
+    editionCount: Number(counts[0]?.editions ?? 0), sportCount: Number(counts[0]?.sports ?? 0),
+    medals: country.committees.reduce((total, noc) => total + noc._count.medalResults, 0),
+  };
+});

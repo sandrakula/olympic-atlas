@@ -164,6 +164,7 @@ model Discipline {
   sportId   Int
   sport     Sport    @relation(fields: [sportId], references: [id], onDelete: Cascade)
   events    Event[]
+  participations ParticipationDiscipline[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -204,12 +205,23 @@ model Participation {
   edition   OlympicEdition           @relation(fields: [editionId], references: [id], onDelete: Cascade)
   noc       NationalOlympicCommittee @relation(fields: [nocId], references: [id])
   sport     Sport                    @relation(fields: [sportId], references: [id])
+  disciplines ParticipationDiscipline[]
   createdAt DateTime                 @default(now())
   updatedAt DateTime                 @updatedAt
 
   @@unique([athleteId, editionId, nocId, sportId])
   @@index([editionId, nocId])
   @@index([sportId])
+}
+
+model ParticipationDiscipline {
+  participationId Int
+  disciplineId Int
+  participation Participation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+  discipline Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+
+  @@id([participationId, disciplineId])
+  @@index([disciplineId])
 }
 
 model Team {
@@ -310,4 +322,10 @@ model FactCitation {
 
   @@unique([sourceId, entityType, entityId, fieldName])
   @@index([entityType, entityId])
+}
+
+model AtlasImportCheckpoint {
+  key          String @id
+  sourceDigest String
+  cursor       Int    @default(0)
 }

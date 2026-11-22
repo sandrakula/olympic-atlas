@@ -53,7 +53,10 @@ describe("athlete catalog", () => {
   test("compares real profiles without synthesizing results", async () => {
     const [biles, phelps] = await getAthleteComparison("simone-biles", "michael-phelps");
     assert.ok(biles && phelps);
-    assert.equal(biles.medalResults.length, 4);
+    assert.equal(biles.medalResults.filter(({ event }) => event.edition.slug === "paris-2024").length, 3);
+    const [teamGold] = biles.teamMedals.filter(({ team }) => team.edition.slug === "paris-2024");
+    assert.equal(teamGold?.medal, "GOLD");
+    assert.ok(biles.participations.some(({ edition }) => edition.slug === "tokyo-2020"));
     assert.equal(phelps.medalResults.length, 6);
   });
 });

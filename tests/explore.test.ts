@@ -16,10 +16,10 @@ const expected = [
   { intent: "editionAthletes", match: "Симона Байлз", rows: 4 },
   { intent: "eventMedal", match: "Жюльен Альфред", rows: 1 },
   { intent: "athleteMedals", match: "Золото · 100 м баттерфляем", rows: 6 },
-  { intent: "athleteEditions", match: "Рио-де-Жанейро 2016", rows: 1 },
+  { intent: "athleteEditions", match: "Рио-де-Жанейро 2016", rows: 3 },
   { intent: "editionSports", match: "Плавание", rows: 2 },
   { intent: "delegationAthletes", match: "Майкл Фелпс", rows: 2 },
-  { intent: "multiGold", match: "Усэйн Болт", rows: 2 },
+  { intent: "multiGold", match: "Усэйн Болт", rows: 5 },
   { intent: "hostCountries", match: "Италия", rows: 20 },
   { intent: "countEditions", value: 25, rows: 0 },
 ] satisfies { intent: Intent; match?: string; rows: number; value?: number }[];
@@ -120,10 +120,11 @@ test("search input and response budgets are enforced and operators are treated a
   assert.equal((await api({ mode: "search", query: "a".repeat(5000) })).status, 400);
   assert.equal((await api({ mode: "search", query: " " })).status, 400);
   assert.equal(makeMatch('" OR *'), '"OR"*');
+  const before = await prisma.athlete.count();
   const syntax = await api({ mode: "search", query: "%' ); MATCH OR -- '" });
   assert.equal(syntax.status, 200);
   assert.deepEqual((await syntax.json()).hits, []);
-  assert.equal(await prisma.athlete.count(), 310);
+  assert.equal(await prisma.athlete.count(), before);
 });
 
 after(() => prisma.$disconnect());

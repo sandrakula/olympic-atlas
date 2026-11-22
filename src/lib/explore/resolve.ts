@@ -44,17 +44,17 @@ async function resolveEdition(name: string) {
   const cityWords = words.filter((word) => word !== yearMatch?.[1]);
   if (!year && !cityWords.length) return [];
   if (year && !cityWords.length) {
-    const editions = await prisma.olympicEdition.findMany({ where: { year, season }, select: { id: true }, orderBy: { id: "asc" }, take: 8 });
+    const editions = await prisma.olympicEdition.findMany({ where: { season, OR: [{ year }, { heldYear: year }] }, select: { id: true }, orderBy: { id: "asc" }, take: 8 });
     return getGraphNodes(editions.map(({ id }): GraphId => `OlympicEdition:${id}`));
   }
-  const query = cityWords.map((word) => aliasOf(cities, word)).concat(year ? [String(year)] : []).join(" ");
+  const query = cityWords.map((word) => aliasOf(cities, word)).join(" ");
   const match = makeMatch(query, true);
   if (!match) return [];
   const rows = await prisma.$queryRaw<{ id: number }[]>`
     SELECT g.id FROM AtlasSearch JOIN OlympicEdition g ON g.id = AtlasSearch.entityId
     WHERE AtlasSearch MATCH ${match} AND AtlasSearch.kind = 'OlympicEdition'
       ${season ? Prisma.sql`AND g.season = ${season}` : Prisma.empty}
-      ${year ? Prisma.sql`AND g.year = ${year}` : Prisma.empty}
+      ${year ? Prisma.sql`AND (g.year = ${year} OR g.heldYear = ${year})` : Prisma.empty}
     ORDER BY g.year DESC, g.id LIMIT 8
   `;
   return getGraphNodes(rows.map(({ id }): GraphId => `OlympicEdition:${id}`));

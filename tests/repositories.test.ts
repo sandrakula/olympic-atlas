@@ -5,13 +5,13 @@ import { prisma } from "../src/lib/prisma";
 import { getAthleteByIdentifier, getGameByIdentifier, getGames, getKnowledgeStats } from "../src/lib/repositories/knowledge";
 
 describe("knowledge repositories", () => {
-  test("returns seeded coverage statistics", async () => {
+  test("returns expanded coverage statistics", async () => {
     const stats = await getKnowledgeStats();
     assert.equal(stats.editions, 61);
-    assert.ok(stats.athletes >= 100);
-    assert.equal(stats.delegations, 12);
-    assert.equal(stats.sports, 6);
-    assert.equal(stats.medalResults, 30);
+    assert.ok(stats.athletes >= 10_900);
+    assert.ok(stats.delegations >= 208);
+    assert.ok(stats.sports >= 39);
+    assert.ok(stats.medalResults >= 1_089);
   });
 
   test("filters editions by season and sorts by year", async () => {
@@ -44,8 +44,22 @@ describe("knowledge repositories", () => {
     assert.ok(rio.nextEdition);
     const biles = await getAthleteByIdentifier("simone-biles");
     assert.ok(biles);
-    assert.equal(biles.medalResults.length, 4);
+    assert.equal(biles.medalResults.filter(({ event }) => event.edition.slug === "rio-2016").length, 4);
     assert.ok(biles.participations.some((item) => item.edition.slug === "rio-2016"));
+  });
+
+  test("paginates Paris medal rows and keeps the full delegation tally", async () => {
+    const [first, second] = await Promise.all([getGameByIdentifier("paris-2024"), getGameByIdentifier("paris-2024", 2)]);
+    assert.ok(first && second);
+    assert.equal(first._count.events, 329);
+    assert.equal(first.medalCount, 1044);
+    assert.equal(second.medalCount, first.medalCount);
+    assert.equal(first.medalTable.find(({ code }) => code === "USA")?.total, 126);
+    assert.equal(first.medalTable.find(({ code }) => code === "INA")?.bronze, 1);
+    assert.equal(first.results.length, 24);
+    assert.equal(second.results.length, 24);
+    assert.ok(first.results.every(({ id }) => second.results.every((result) => result.id !== id)));
+    assert.equal(first.participations.length, 12);
   });
 
   test("preserves result and foreign-key integrity", async () => {
@@ -55,6 +69,13 @@ describe("knowledge repositories", () => {
     assert.equal(invalidResults, 0);
     const foreignKeyErrors = await prisma.$queryRawUnsafe<unknown[]>("PRAGMA foreign_key_check");
     assert.deepEqual(foreignKeyErrors, []);
+    const [consistent] = await prisma.$queryRaw<{ links: bigint; invalid: bigint }[]>`
+      SELECT COUNT(*) links, COUNT(CASE WHEN p.sportId <> d.sportId THEN 1 END) invalid
+      FROM ParticipationDiscipline pd JOIN Participation p ON p.id = pd.participationId
+      JOIN Discipline d ON d.id = pd.disciplineId
+    `;
+    assert.ok(Number(consistent.links) >= 10_764);
+    assert.equal(Number(consistent.invalid), 0);
   });
 });
 

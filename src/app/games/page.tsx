@@ -1,5 +1,5 @@
 import { atlasMetadata } from "@/lib/metadata";
-import { ArrowDown, ArrowLeftRight, Database, Globe2 } from "lucide-react";
+import { ArrowDown, ArrowLeftRight } from "lucide-react";
 import Link from "next/link";
 import { GamesExplorer, type CatalogGame } from "@/components/games-explorer";
 import { getGames } from "@/lib/repositories/knowledge";
@@ -37,24 +37,21 @@ export default async function GamesPage() {
   }));
 
   return <main>
-    <section className="relative isolate overflow-hidden border-b border-white/[0.08] bg-[#070d19]">
-      <div className="hero-grid absolute inset-0 -z-20 opacity-90" />
-      <div className="absolute -right-24 top-16 -z-10 size-[34rem] rounded-full bg-[#55b9f3]/10 blur-3xl" />
-      <div className="absolute -left-24 bottom-0 -z-10 size-[28rem] rounded-full bg-[#d6ad60]/10 blur-3xl" />
-      <div className="mx-auto max-w-[90rem] px-5 pb-24 pt-20 sm:px-8 lg:px-12 lg:pb-32 lg:pt-28">
-        <div className="flex flex-wrap gap-2 text-xs font-bold uppercase tracking-[0.17em] text-[#9fb0c7]"><span className="inline-flex items-center gap-2 rounded-full border border-[#55b9f3]/20 bg-[#55b9f3]/[0.06] px-3 py-2"><Database className="size-3.5 text-[#55b9f3]" />Данные IOC</span><span className="inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-2"><Globe2 className="size-3.5 text-[#d6ad60]" />1896—2026</span></div>
-        <div className="mt-10 grid gap-12 lg:grid-cols-[1.25fr_0.75fr] lg:items-end">
-          <div><p className="text-sm font-bold uppercase tracking-[0.25em] text-[#d6ad60]">Полный исторический каталог</p><h1 className="mt-5 max-w-5xl text-5xl font-black leading-[0.93] tracking-[-0.065em] text-white sm:text-7xl lg:text-[6.5rem]">Игры, которые<br /><span className="text-outline">изменили мир</span></h1></div>
-          <div className="max-w-xl lg:pb-2">
-            <p className="text-lg leading-8 text-[#b4bfd0]">Все официально состоявшиеся летние и зимние Олимпийские игры — от мраморного стадиона Афин до распределённых арен Milano Cortina.</p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <a href="#catalog" className="inline-flex items-center gap-3 rounded-full border border-white/[0.12] bg-white/[0.04] px-5 py-3 text-sm font-bold text-white transition hover:border-[#55b9f3]/40 hover:bg-[#55b9f3]/[0.07]"><ArrowDown className="size-4 text-[#55b9f3]" />Исследовать каталог</a>
-              <Link href="/compare/games" className="inline-flex items-center gap-3 rounded-full border border-[#d6ad60]/30 bg-[#d6ad60]/[.06] px-5 py-3 text-sm font-bold text-[#e7c77f] hover:border-[#d6ad60]/70"><ArrowLeftRight className="size-4" />Сравнить Игры</Link>
-            </div>
+    <header className="atlas-games-hero">
+      <div className="atlas-shell atlas-directory-heading">
+        <div>
+          <p className="atlas-kicker">1896–2026 · Олимпийская хронология</p>
+          <h1 className="atlas-display">Олимпийские <span className="text-[#e3bf78]">игры</span></h1>
+        </div>
+        <div>
+          <p className="max-w-md text-[#c3cee0]">Летние и зимние Игры, отменённые издания и ключевые даты. Показатели изданий сверены с источниками IOC.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a href="#catalog" className="atlas-action atlas-action-gold"><ArrowDown size={17} aria-hidden />К каталогу</a>
+            <Link href="/compare/games" className="atlas-action"><ArrowLeftRight size={17} aria-hidden />Сравнить Игры</Link>
           </div>
         </div>
       </div>
-    </section>
-    <div id="catalog"><GamesExplorer games={games} /></div>
+    </header>
+    <div><GamesExplorer games={games} /></div>
   </main>;
 }

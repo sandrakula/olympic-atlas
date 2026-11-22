@@ -1,38 +1,162 @@
 import type { Metadata } from "next";
-import { ArrowLeft, CalendarDays, ExternalLink, Flag, MapPin, Medal, ShieldCheck, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, CalendarDays, ExternalLink, MapPin, Medal, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AthleteImage } from "@/components/athlete-image";
+import { AnimatedMetric } from "@/components/animated-metric";
 import { AskAtlasLink } from "@/components/ask-atlas-link";
+import { AthleteImage } from "@/components/athlete-image";
+import { CountryFlag, DelegationFlag } from "@/components/country-flag";
 import { OpenGraphLink } from "@/components/open-graph-link";
+import { sportVisual } from "@/data/sport-visuals";
+import { summarizeAthleteMedals } from "@/lib/athlete-medals";
 import { atlasMetadata } from "@/lib/metadata";
 import { getAthleteProfile } from "@/lib/repositories/athletes";
 
 export const dynamic = "force-dynamic";
-type Props = { params: Promise<{ id: string }> };
-const medalLabel = { GOLD: "Золото", SILVER: "Серебро", BRONZE: "Бронза" } as const;
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+const medals = {
+  GOLD: { name: "Золото", color: "#e7c982" },
+  SILVER: { name: "Серебро", color: "#cedaed" },
+  BRONZE: { name: "Бронза", color: "#eca984" },
+} as const;
+
+export async function generateMetadata({ params }: PageProps<"/athletes/[id]">): Promise<Metadata> {
   const { id } = await params;
   const athlete = await getAthleteProfile(id);
   return athlete ? atlasMetadata("/athletes/" + encodeURIComponent(athlete.slug), athlete.fullName, athlete.biography) : {};
 }
 
-export default async function AthleteDetailPage({ params }: Props) {
+export default async function AthleteDetailPage({ params }: PageProps<"/athletes/[id]">) {
   const { id } = await params;
-  const athlete = await getAthleteProfile(id); if (!athlete) notFound();
-  const allMedals = [...athlete.medalResults.map((item) => ({ medal: item.medal })), ...athlete.teamMedals.map((item) => ({ medal: item.medal }))];
-  const counts = { GOLD: allMedals.filter((item) => item.medal === "GOLD").length, SILVER: allMedals.filter((item) => item.medal === "SILVER").length, BRONZE: allMedals.filter((item) => item.medal === "BRONZE").length };
+  const athlete = await getAthleteProfile(id);
+  if (!athlete) notFound();
+
+  const ids = JSON.parse(athlete.externalIds) as { paris2024Profile?: string };
+  const profileUrl = ids.paris2024Profile && /^https:\/\/olympics\.com\/fr\/paris-2024\/athlete\/[a-z0-9_-]+$/i.test(ids.paris2024Profile) ? ids.paris2024Profile : null;
+  const latest = athlete.participations[0];
+  const { icon: SportIcon } = sportVisual(latest?.sport.slug);
+  const sports = [...new Map(athlete.participations.map(({ sport }) => [sport.slug, sport])).values()];
+  const disciplines = [...new Set(athlete.participations.flatMap(({ disciplines }) => disciplines.map(({ discipline }) => discipline.name)))];
+  const scoreboard = summarizeAthleteMedals(athlete.medalResults, athlete.teamMedals);
+  const directIds = new Set(athlete.medalResults.map(({ id }) => id));
+  const results = [
+    ...athlete.medalResults.map(({ id, medal, event, noc }) => ({ id, medal, edition: event.edition, noc, eventName: event.name, detail: event.discipline.sport.name })),
+    ...athlete.teamMedals.filter(({ id }) => !directIds.has(id)).map(({ id, medal, team }) => ({
+      id, medal, edition: team.edition, noc: team.noc, eventName: team.event?.name ?? team.name, detail: "Командный результат",
+    })),
+  ].sort((a, b) => b.edition.year - a.edition.year || a.id - b.id);
   return <main>
-    <div className="mx-auto flex max-w-[90rem] flex-wrap gap-2 px-5 pt-6 sm:px-8 lg:px-12">
-      <OpenGraphLink type="Athlete" id={athlete.id} />
-      <AskAtlasLink question={`На каких Олимпиадах выступал ${athlete.fullName}?`}>Спросить о выступлениях</AskAtlasLink>
+    <header className="atlas-athlete-hero">
+      <div className="atlas-shell pt-5 pb-9 sm:pt-7 sm:pb-14">
+        <Link href="/athletes" className="atlas-text-link"><ArrowLeft size={16} aria-hidden />Все спортсмены</Link>
+        <div className="atlas-athlete-hero-grid mt-4 sm:mt-6">
+          <div className="min-w-0">
+            <p className="atlas-kicker"><SportIcon size={16} aria-hidden />{latest?.sport.name ?? athlete.specialty ?? "Досье спортсмена"}</p>
+            <h1 className="atlas-display wrap-anywhere">{athlete.fullName}</h1>
+            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3 text-sm text-[#cad8eb]">
+              {latest ? <span className="inline-flex items-center gap-2">
+                <DelegationFlag noc={latest.noc} year={latest.edition.year} className="w-6" />
+                {latest.noc.name} · {latest.noc.code}
+              </span> : athlete.country && <Link href={`/countries/${athlete.country.code.toLowerCase()}`} className="inline-flex items-center gap-2 hover:text-white">
+                {athlete.country.activeTo === null && <CountryFlag code={athlete.country.code} name={athlete.country.name} className="w-6" />}
+                {athlete.country.name}
+              </Link>}
+              {athlete.birthPlace && <span className="inline-flex items-center gap-2"><MapPin className="size-4 text-[#55b9f3]" />{athlete.birthPlace}</span>}
+              {athlete.birthDate && <span className="inline-flex items-center gap-2"><CalendarDays className="size-4 text-[#55b9f3]" />
+                {athlete.birthDate.toLocaleDateString("ru-RU", { timeZone: "UTC" })}
+              </span>}
+            </div>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-[#bfcde0] sm:text-lg">{athlete.biography}</p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <OpenGraphLink type="Athlete" id={athlete.id} />
+              <AskAtlasLink question={`На каких Олимпиадах выступал ${athlete.fullName}?`}>Спросить о выступлениях</AskAtlasLink>
+            </div>
+            {scoreboard.total > 0 && <dl className="atlas-profile-medals mt-7" aria-label="Подтверждённые медальные результаты в базе">
+              <MedalMetric name="Медалей в базе" value={scoreboard.total} color="#55b9f3" />
+              <MedalMetric name={medals.GOLD.name} value={scoreboard.gold} color={medals.GOLD.color} />
+              <MedalMetric name={medals.SILVER.name} value={scoreboard.silver} color={medals.SILVER.color} />
+              <MedalMetric name={medals.BRONZE.name} value={scoreboard.bronze} color={medals.BRONZE.color} />
+            </dl>}
+          </div>
+          <div className="atlas-athlete-hero-portrait">
+            <AthleteImage athlete={athlete} size="hero" priority />
+            <SportIcon aria-hidden strokeWidth={1} />
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div className="atlas-shell atlas-section">
+      <div className="atlas-career">
+        <section aria-labelledby="career">
+          <h2 id="career" className="text-3xl font-black tracking-tight">Хронология участий</h2>
+          {athlete.participations.length ? <ol className="mt-5">
+            {athlete.participations.map(({ id, edition, sport, noc, disciplines }) => <li key={id} className="atlas-career-entry">
+              <time dateTime={String(edition.heldYear ?? edition.year)}>{edition.heldYear ?? edition.year}</time>
+              <Link href={`/games/${edition.slug}`} className="atlas-career-link">
+                <div>
+                  <strong className="text-lg text-white">{edition.hostCity} {edition.year}</strong>
+                  <p className="mt-1 text-sm text-[#bbcadf]">{disciplines.length ? disciplines.map(({ discipline }) => discipline.name).join(", ") : sport.name}</p>
+                  <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#a9bfd8]">
+                    <DelegationFlag noc={noc} year={edition.year} className="w-5" />
+                    {noc.name} · {noc.code} · {edition.season === "SUMMER" ? "летние Игры" : "зимние Игры"}
+                  </p>
+                </div>
+                <ArrowUpRight size={17} className="text-[#55b9f3]" aria-hidden />
+              </Link>
+            </li>)}
+          </ol> : <p className="mt-5 border-t pt-4 text-[#b4bfd0]">Подтверждённые участия для этого профиля пока отсутствуют.</p>}
+        </section>
+
+        <section aria-labelledby="medal-events">
+          <h2 id="medal-events" className="text-3xl font-black tracking-tight">Медальные события</h2>
+          <p className="mt-2 text-sm text-[#b4bfd0]">Подтверждённая выборка из базы Атласа.</p>
+          {results.length ? <ul className="mt-5 divide-y divide-white/10 border-y border-white/10">
+            {results.map(({ id, medal, edition, noc, eventName, detail }) => <li key={id} className="flex items-start gap-3 py-3.5">
+              <Medal size={20} className="mt-1 shrink-0" style={{ color: medals[medal].color }} aria-hidden />
+              <div>
+                <p className="text-xs font-semibold" style={{ color: medals[medal].color }}>{medals[medal].name} · {edition.year} · {noc.code}</p>
+                <Link href={`/games/${edition.slug}#results`} className="mt-1 block font-bold text-white hover:text-[#a9dfff]">{eventName}</Link>
+                <p className="mt-1 text-sm text-[#b4bfd0]">{detail}</p>
+              </div>
+            </li>)}
+          </ul> : <p className="mt-5 border-t pt-4 text-[#b4bfd0]">Подтверждённые медальные записи пока отсутствуют.</p>}
+        </section>
+      </div>
+
+      {sports.length > 0 && <section className="atlas-profile-related">
+        <h2 className="text-2xl font-black">Виды спорта и дисциплины</h2>
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1">
+          {sports.map(({ slug, name }) => <Link key={slug} href={`/sports#${slug}`} className="atlas-text-link">{name}<ArrowUpRight size={16} aria-hidden /></Link>)}
+        </div>
+        {disciplines.length > 0 && <ul className="mt-1 flex flex-wrap gap-2 text-sm text-[#c4d3e8]">
+          {disciplines.map((name) => <li key={name} className="rounded border px-2.5 py-1.5">{name}</li>)}
+        </ul>}
+      </section>}
+
+      <section className="atlas-profile-related">
+        <h2 className="text-2xl font-black">Источники</h2>
+        {athlete.imageSourceUrl && <aside className="mt-4 border-l-2 border-[#d6ad60] pl-3 text-sm leading-6 text-[#bfcee2]">
+          <p className="flex items-center gap-2 font-semibold text-white"><ShieldCheck className="size-4 text-[#55b9f3]" />Атрибуция фотографии</p>
+          <p>{athlete.imageAuthor} · {athlete.imageLicenseUrl ? <a href={athlete.imageLicenseUrl} target="_blank" rel="noreferrer" className="text-[#aee0ff] hover:underline">{athlete.imageLicense}</a> : athlete.imageLicense}</p>
+          <a href={athlete.imageSourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[#aee0ff] hover:underline">Оригинал на Wikimedia Commons <ExternalLink size={13} aria-hidden /></a>
+        </aside>}
+        <ul className="mt-5 grid gap-2 md:grid-cols-2">
+          {profileUrl && <li><SourceLink href={profileUrl} title="Профиль Paris 2024 на Olympics.com" /></li>}
+          {athlete.citations.map((source) => <li key={source.id}><SourceLink href={source.url} title={source.title} publisher={source.publisher} /></li>)}
+        </ul>
+        {!profileUrl && !athlete.citations.length && <p className="text-sm text-[#b4bfd0]">Источники спортивных результатов пока не добавлены.</p>}
+      </section>
     </div>
-    <section className="relative overflow-hidden border-b border-white/[0.08] bg-[#080e1c]"><div className="page-grid absolute inset-0 opacity-55" /><div className="relative mx-auto max-w-[90rem] px-5 py-10 sm:px-8 lg:px-12 lg:py-16"><Link href="/athletes" className="inline-flex items-center gap-2 text-sm font-bold text-[#98a6bb] hover:text-white"><ArrowLeft className="size-4" />Все спортсмены</Link><div className="mt-9 grid gap-10 lg:grid-cols-[.72fr_1.28fr] lg:items-end"><AthleteImage athlete={athlete} size="hero" priority /><div className="pb-2"><div className="flex flex-wrap gap-2"><span className="rounded-full border border-[#55b9f3]/25 bg-[#55b9f3]/[.07] px-4 py-2 text-xs font-bold uppercase tracking-[.15em] text-[#9bd8fb]">{athlete.participations[0]?.sport.name ?? athlete.specialty ?? "Профиль спортсмена"}</span><span className="rounded-full border border-white/10 px-4 py-2 text-xs font-bold text-[#b4bfd0]">{athlete.dataStatus === "WIKIDATA_BASIC" ? "Базовый профиль" : "Проверенный профиль"}</span></div><h1 className="mt-7 text-5xl wrap-anywhere font-black tracking-[-.06em] text-white sm:text-7xl xl:text-[6rem]">{athlete.fullName}</h1><p className="mt-6 max-w-3xl text-lg leading-8 text-[#b4bfd0]">{athlete.biography}</p><div className="mt-8 flex flex-wrap gap-x-7 gap-y-3 text-sm text-[#98a6bb]">{athlete.birthPlace && <span className="flex items-center gap-2"><MapPin className="size-4 text-[#55b9f3]" />{athlete.birthPlace}</span>}{athlete.birthDate && <span className="flex items-center gap-2"><CalendarDays className="size-4 text-[#55b9f3]" />{athlete.birthDate.toLocaleDateString("ru-RU", { timeZone: "UTC" })}</span>}<span className="flex items-center gap-2"><Flag className="size-4 text-[#55b9f3]" />{athlete.participations[0]?.noc.name ?? athlete.country?.name ?? "Делегация не подтверждена"}</span></div><div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-4"><MedalMetric label="Золото" value={counts.GOLD} tone="text-[#e7c982]" /><MedalMetric label="Серебро" value={counts.SILVER} tone="text-[#c7d0dc]" /><MedalMetric label="Бронза" value={counts.BRONZE} tone="text-[#c98b63]" /><MedalMetric label="Всего" value={allMedals.length} tone="text-[#55b9f3]" /></div><p className="mt-3 text-xs leading-5 text-[#65748a]">Считаются только строки результатов в базе; отсутствие строки не означает отсутствие исторического достижения.</p></div></div></div></section>
-    <section className="mx-auto max-w-[90rem] px-5 py-14 sm:px-8 lg:px-12 lg:py-20"><div className="grid gap-12 xl:grid-cols-[.72fr_1.28fr]"><section><p className="text-xs font-bold uppercase tracking-[.18em] text-[#55b9f3]">Олимпийская карьера</p><h2 className="mt-3 text-3xl font-black text-white">Хронология участий</h2>{athlete.participations.length ? <div className="relative mt-7 space-y-4 before:absolute before:bottom-5 before:left-[1.15rem] before:top-5 before:w-px before:bg-[#55b9f3]/25">{athlete.participations.map((item) => <Link key={item.id} href={`/games/${item.edition.slug}`} className="relative block rounded-2xl border border-white/[.08] bg-[#101a2d] p-5 pl-14 transition hover:border-[#55b9f3]/35"><span className="absolute left-3 top-5 grid size-5 place-items-center rounded-full border border-[#55b9f3]/50 bg-[#080e1c]"><span className="size-1.5 rounded-full bg-[#55b9f3]" /></span><div className="flex items-start justify-between gap-4"><div><b className="text-white">{item.edition.hostCity} {item.edition.year}</b><p className="mt-1 text-sm text-[#98a6bb]">{item.sport.name} · {item.edition.season === "SUMMER" ? "летние" : "зимние"}</p></div><span className="rounded-full border border-[#d6ad60]/20 px-2.5 py-1 text-xs font-black text-[#d6ad60]">{item.noc.code}</span></div></Link>)}</div> : <div className="mt-7 rounded-2xl border border-dashed border-white/15 p-7 text-sm leading-6 text-[#98a6bb]">Точная олимпийская хронология пока не загружена. Профиль остаётся в каталоге как идентифицированный спортсмен, но делегация и результаты не предполагаются автоматически.</div>}</section>
-      <section><p className="text-xs font-bold uppercase tracking-[.18em] text-[#d6ad60]">Подтверждённые достижения</p><h2 className="mt-3 text-3xl font-black text-white">Медальные события</h2>{athlete.medalResults.length || athlete.teamMedals.length ? <div className="mt-7 overflow-hidden rounded-3xl border border-white/[.08] divide-y divide-white/[.08]">{athlete.medalResults.map((result) => <article key={`i-${result.id}`} className="grid gap-3 bg-[#101a2d] p-5 sm:grid-cols-[.45fr_1fr_auto] sm:items-center"><div><b className="text-[#d6ad60]">{medalLabel[result.medal]}</b><p className="mt-1 text-xs text-[#78889f]">{result.event.edition.year} · {result.noc.code}</p></div><div><p className="font-bold text-white">{result.event.name}</p><p className="mt-1 text-sm text-[#98a6bb]">{result.event.discipline.sport.name}</p></div><Medal className="size-5 text-[#d6ad60]" /></article>)}{athlete.teamMedals.map((result) => <article key={`t-${result.id}`} className="grid gap-3 bg-[#101a2d] p-5 sm:grid-cols-[.45fr_1fr_auto] sm:items-center"><div><b className="text-[#d6ad60]">{medalLabel[result.medal]}</b><p className="mt-1 text-xs text-[#78889f]">{result.team.edition.year} · {result.team.noc.code}</p></div><div><p className="font-bold text-white">{result.team.event?.name ?? result.team.name}</p><p className="mt-1 text-sm text-[#98a6bb]">Командный результат — учтён один раз</p></div><Trophy className="size-5 text-[#55b9f3]" /></article>)}</div> : <div className="mt-7 rounded-2xl border border-dashed border-white/15 p-7 text-sm leading-6 text-[#98a6bb]">В базе нет подтверждённых медальных строк для этого профиля. Это не утверждение об отсутствии медалей в исторической карьере.</div>}</section></div>
-      {athlete.imageUrl && <aside className="mt-14 rounded-2xl border border-white/[.08] bg-[#101a2d] p-5 text-sm text-[#98a6bb]"><p className="flex items-center gap-2 font-bold text-white"><ShieldCheck className="size-4 text-[#55b9f3]" />Атрибуция фотографии</p><p className="mt-2">{athlete.imageAuthor} · {athlete.imageLicense}</p>{athlete.imageSourceUrl && <a href={athlete.imageSourceUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-2 text-[#55b9f3]">Оригинал на Wikimedia Commons <ExternalLink className="size-3" /></a>}</aside>}
-      <section className="mt-14 border-t border-white/[.08] pt-10"><h2 className="text-2xl font-black text-white">Источники</h2><div className="mt-5 grid gap-3 md:grid-cols-2">{athlete.citations.map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer" className="flex justify-between gap-4 rounded-2xl border border-white/[.08] bg-[#101a2d] p-5 text-sm text-[#b4bfd0] hover:border-[#d6ad60]/30"><span>{source.title}<small className="mt-2 block text-[#78889f]">{source.publisher}</small></span><ExternalLink className="size-4 text-[#55b9f3]" /></a>)}</div></section>
-    </section>
   </main>;
 }
-function MedalMetric({ label, value, tone }: { label: string; value: number; tone: string }) { return <div className="rounded-2xl border border-white/[.09] bg-[#101a2d]/80 p-4"><span className="text-xs font-bold uppercase tracking-[.14em] text-[#78889f]">{label}</span><b className={`mt-2 block text-3xl font-black ${tone}`}>{value}</b></div>; }
+
+function MedalMetric({ name, value, color }: { name: string; value: number; color: string }) {
+  return <div><dt>{name}</dt><dd style={{ color }}><AnimatedMetric value={value} /></dd></div>;
+}
+
+function SourceLink({ href, title, publisher }: { href: string; title: string; publisher?: string }) {
+  return <a href={href} target="_blank" rel="noreferrer" className="flex h-full justify-between gap-3 rounded-md border bg-[#101a2d] p-3 text-sm text-[#c7d6e8] hover:border-[#55b9f3]">
+    <span>{title}{publisher && <small className="mt-1 block text-[#a5b7ce]">{publisher}</small>}</span>
+    <ExternalLink className="size-4 shrink-0 text-[#55b9f3]" aria-hidden />
+  </a>;
+}

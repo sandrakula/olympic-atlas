@@ -163,11 +163,15 @@ async function incident(node: GraphId, take: number, offset = 0, includeCitation
     const column = relation.from === parsed.type ? relation.fromField : relation.to === parsed.type ? relation.toField : null;
     if (!column) return [];
     const query = edgeQuery(relation, sql`AND ${Prisma.raw(`r.${column}`)} = ${parsed.id}`);
-    return [sql`SELECT *, ${priority} AS priority FROM ( ${query} )`];
+    return [sql`SELECT *, ${priority} AS priority FROM (
+      ${query} ORDER BY rowId LIMIT ${take + offset + 1}
+    )`];
   });
   if (!branches.length) return { edges: [], more: false };
   const rows = await database.$queryRaw<EdgeRow[]>(sql`
-    ${Prisma.join(branches, " UNION ALL ")} ORDER BY priority, rowId LIMIT ${take + 1} OFFSET ${offset}
+    SELECT * FROM (${Prisma.join(branches, " UNION ALL ")})
+    ORDER BY ROW_NUMBER() OVER (PARTITION BY priority ORDER BY rowId), priority
+    LIMIT ${take + 1} OFFSET ${offset}
   `);
   return { edges: rows.slice(0, take).map(mapEdge), more: rows.length > take };
 }

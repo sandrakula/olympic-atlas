@@ -39,27 +39,9 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/analyt
     </AnalysisHero>
 
     <div className={sectionWidth + " space-y-14 py-9 sm:space-y-20 sm:py-12"}>
-      <section aria-labelledby="overview">
-        <Heading id="overview" title="Игры в цифрах" />
-        <p className="mb-2 text-xs font-bold uppercase tracking-[.13em] text-[#e7c77f]">Официальная история · выбранный срез</p>
-        <Metrics items={[
-          { label: "Состоялись", value: summary.held, detail: summary.summer + " летних · " + summary.winter + " зимних" },
-          { label: "Записи хронологии", value: history.length },
-          { label: "Места проведения", value: summary.cities.length },
-          { label: "Страны-организаторы", value: summary.countries.length },
-        ]} />
-        <p className="mb-2 mt-5 text-xs font-bold uppercase tracking-[.13em] text-[#83cfff]">Локальная база · все записи</p>
-        <Metrics accent="blue" items={[
-          { label: "Профили спортсменов", value: profiles.total },
-          { label: "Записи об участии", value: profiles.entries },
-          { label: "Медальные результаты", value: profiles.medals },
-          { label: "Узлы графа знаний", value: graph.nodes, detail: formatCount(graph.edges) + " связей" },
-        ]} />
-      </section>
-
       <section aria-labelledby="filters" id="selection" className="scroll-mt-24">
         <Heading id="filters" title="Выбор данных" />
-        <form action="/analytics#selection" className={panelClass + " grid gap-4 sm:grid-cols-2 lg:grid-cols-4"}>
+        <form action="/analytics#selection" className={panelClass + " atlas-analysis-filters grid gap-4 sm:grid-cols-2 lg:grid-cols-4"}>
           <div className="grid grid-cols-2 gap-2">
             {[["from", "С года", filters.from], ["to", "По год", filters.to]].map(([name, label, year]) =>
               <label key={name} className="block min-w-0 text-sm text-[#b4bfd0]">{label}
@@ -98,6 +80,26 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/analyt
           <p className="text-xs leading-5 text-[#aebdd1] sm:col-span-2 lg:col-span-4">Страна задаёт организатора в историческом разделе и связанные НОК в локальном. Делегация и вид спорта применяются к локальным спортивным данным.</p>
         </form>
       </section>
+
+      <section aria-labelledby="overview">
+        <Heading id="overview" title="Игры в цифрах" />
+        <p className="mb-2 text-xs font-bold uppercase tracking-[.13em] text-[#e7c77f]">Официальная история · выбранный срез</p>
+        <Metrics items={[
+          { label: "Состоялись", value: summary.held, detail: summary.summer + " летних · " + summary.winter + " зимних" },
+          { label: "Записи хронологии", value: history.length },
+          { label: "Места проведения", value: summary.cities.length },
+          { label: "Страны-организаторы", value: summary.countries.length },
+        ]} />
+        <p className="mb-2 mt-5 text-xs font-bold uppercase tracking-[.13em] text-[#83cfff]">Локальная база · все записи</p>
+        <Metrics accent="blue" items={[
+          { label: "Профили спортсменов", value: profiles.total },
+          { label: "Записи об участии", value: profiles.entries },
+          { label: "Медальные результаты", value: profiles.medals },
+          { label: "Узлы графа знаний", value: graph.nodes, detail: formatCount(graph.edges) + " связей" },
+        ]} />
+      </section>
+
+
 
       <section aria-labelledby="history">
         <Heading id="history" title="История Игр" description="Официальная история в выбранном срезе. Источники и примечания к подсчёту указаны в карточках изданий." />

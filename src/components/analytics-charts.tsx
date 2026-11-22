@@ -11,17 +11,17 @@ import { formatCount, seasons, statuses } from "@/lib/analytics";
 
 const blue = "#55b9f3";
 const gold = "#d6ad60";
-const axis = { fill: "#aebdd1", fontSize: 11 };
-const grid = "#ffffff12";
+const axis = { fill: "#bbcadf", fontSize: 11 };
+const grid = "#a7c7ea25";
 const tooltip = {
-  backgroundColor: "#080e1c", border: "1px solid #364864", borderRadius: 12, color: "#fff",
+  backgroundColor: "#0a1424", border: "1px solid #506788", borderRadius: 8, padding: "10px 12px", color: "#fff", boxShadow: "0 8px 22px #0008",
 };
 const cursor = { fill: "#ffffff08", stroke: "#55b9f34a" };
 const value = (number: unknown) => typeof number === "number" ? formatCount(number) : "";
 type Point = { name: string; year: number; season: keyof typeof seasons; slug: string; status: keyof typeof statuses };
 type Series = { key: string; label: string; color: string };
 type BarRow = { name: string; label?: string; axisLabel?: string; href?: string } & Record<string, string | number | null | undefined>;
-const legend = (label: string) => <span className="text-xs text-[#b4bfd0]">{label}</span>;
+const legend = (label: string) => <span className="px-1.5 text-xs font-medium text-[#c4d4e9]">{label}</span>;
 
 export function TimelineChart({ editions }: { editions: Point[] }) {
   const router = useRouter();
@@ -91,7 +91,7 @@ export function HistoryChart({ editions, series, pointsOnly }: {
           }} />
           {series.length > 1 && <Legend formatter={legend} />}
           {series.map(({ key, label, color }) => <Line key={key} dataKey={key} name={label} stroke={color}
-            connectNulls={false} strokeWidth={pointsOnly ? 0 : 2} dot={{ r: rows.length > 20 ? 2 : 3, fill: color }}
+            connectNulls={false} strokeWidth={pointsOnly ? 0 : 2.5} dot={{ r: rows.length > 20 ? 2 : 3, fill: color }}
             isAnimationActive={!reduced} animationDuration={500}
             activeDot={{ r: 6, cursor: "pointer", onClick: (_event, point) => {
               const datum = point as { payload?: Point };

@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   // A project-specific cache avoids Windows locks left by earlier Next workers.
-  distDir: ".next-atlas",
+  distDir: process.env.ATLAS_NEXT_DIST_DIR || ".next-atlas",
   serverExternalPackages: ["@prisma/adapter-better-sqlite3", "better-sqlite3"],
   images: {
     remotePatterns: [

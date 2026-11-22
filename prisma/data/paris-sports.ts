@@ -1,0 +1,63 @@
+// Source labels from the two Paris 2024 snapshots. The Atlas taxonomy reuses
+// the established sport slugs and groups disciplines with a common programme.
+type Discipline = readonly [
+  french: string, slug: string, name: string, parent?: readonly [slug: string, name: string],
+];
+
+export const parisSports: Readonly<Record<string, Discipline>> = {
+  "3x3 Basketball": ["Basketball 3x3", "basketball-3x3", "Баскетбол 3×3", ["basketball", "Баскетбол"]],
+  Archery: ["Tir à l'arc", "archery", "Стрельба из лука"],
+  "Artistic Gymnastics": ["Gymnastique artistique", "artistic-gymnastics", "Спортивная гимнастика"],
+  "Artistic Swimming": ["Natation artistique", "artistic-swimming", "Синхронное плавание"],
+  Athletics: ["Athlétisme", "athletics", "Лёгкая атлетика"],
+  Badminton: ["Badminton", "badminton", "Бадминтон"],
+  Basketball: ["Basketball", "basketball", "Баскетбол"],
+  "Beach Volleyball": ["Volleyball de plage", "beach-volleyball", "Пляжный волейбол", ["volleyball", "Волейбол"]],
+  Boxing: ["Boxe", "boxing", "Бокс"],
+  Breaking: ["Breaking", "breaking", "Брейкинг"],
+  "Canoe Slalom": ["Canoë-kayak slalom", "canoe-slalom", "Гребной слалом", ["canoe", "Гребля на байдарках и каноэ"]],
+  "Canoe Sprint": ["Canoë-kayak sprint", "canoe-sprint", "Гребля на гладкой воде", ["canoe", "Гребля на байдарках и каноэ"]],
+  "Cycling BMX Freestyle": ["Cyclisme BMX Freestyle", "cycling-bmx-freestyle", "BMX-фристайл", ["cycling", "Велоспорт"]],
+  "Cycling BMX Racing": ["Cyclisme BMX Racing", "cycling-bmx-racing", "BMX-гонки", ["cycling", "Велоспорт"]],
+  "Cycling Mountain Bike": ["Cyclisme Mountain Bike", "cycling-mountain-bike", "Маунтинбайк", ["cycling", "Велоспорт"]],
+  "Cycling Road": ["Cyclisme sur route", "cycling-road", "Шоссейные велогонки", ["cycling", "Велоспорт"]],
+  "Cycling Track": ["Cyclisme sur piste", "cycling-track", "Трековые велогонки", ["cycling", "Велоспорт"]],
+  Diving: ["Plongeon", "diving", "Прыжки в воду"],
+  Equestrian: ["Sports équestres", "equestrian", "Конный спорт"],
+  Fencing: ["Escrime", "fencing", "Фехтование"],
+  Football: ["Football", "football", "Футбол"],
+  Golf: ["Golf", "golf", "Гольф"],
+  Handball: ["Handball", "handball", "Гандбол"],
+  Hockey: ["Hockey", "field-hockey", "Хоккей на траве"],
+  Judo: ["Judo", "judo", "Дзюдо"],
+  "Marathon Swimming": ["Natation, marathon", "marathon-swimming", "Плавание на открытой воде", ["swimming", "Плавание"]],
+  "Modern Pentathlon": ["Pentathlon moderne", "modern-pentathlon", "Современное пятиборье"],
+  "Rhythmic Gymnastics": ["Gymnastique rythmique", "rhythmic-gymnastics", "Художественная гимнастика"],
+  Rowing: ["Aviron", "rowing", "Академическая гребля"],
+  "Rugby Sevens": ["Rugby à sept", "rugby-sevens", "Регби-7"],
+  Sailing: ["Voile", "sailing", "Парусный спорт"],
+  Shooting: ["Tir", "shooting", "Стрельба"],
+  Skateboarding: ["Skateboard", "skateboarding", "Скейтбординг"],
+  "Sport Climbing": ["Escalade", "sport-climbing", "Спортивное скалолазание"],
+  Surfing: ["Surf", "surfing", "Сёрфинг"],
+  Swimming: ["Natation", "swimming", "Плавание"],
+  "Table Tennis": ["Tennis de table", "table-tennis", "Настольный теннис"],
+  Taekwondo: ["Taekwondo", "taekwondo", "Тхэквондо"],
+  Tennis: ["Tennis", "tennis", "Теннис"],
+  "Trampoline Gymnastics": ["Trampoline", "trampoline", "Прыжки на батуте"],
+  Triathlon: ["Triathlon", "triathlon", "Триатлон"],
+  Volleyball: ["Volleyball", "volleyball", "Волейбол"],
+  "Water Polo": ["Water-polo", "water-polo", "Водное поло"],
+  Weightlifting: ["Haltérophilie", "weightlifting", "Тяжёлая атлетика"],
+  Wrestling: ["Lutte", "wrestling", "Спортивная борьба"],
+};
+
+// These six programme events already have editorial Russian titles and URLs.
+export const parisExistingEvents: Readonly<Record<string, string>> = {
+  "Athletics|Women's Triple Jump": "paris-2024-athletics-тройной-прыжок-женщины",
+  "Athletics|Women's 100m": "paris-2024-athletics-100-м-женщины",
+  "Swimming|Men's 200m Breaststroke": "paris-2024-swimming-200-breaststroke-men",
+  "Swimming|Men's 200m Butterfly": "paris-2024-swimming-200-butterfly-men",
+  "Swimming|Men's 200m Individual Medley": "paris-2024-swimming-200-medley-men",
+  "Swimming|Men's 400m Individual Medley": "paris-2024-swimming-400-medley-men",
+};

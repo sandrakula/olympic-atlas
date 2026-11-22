@@ -48,7 +48,7 @@ async function main() {
       if (!wikidataId || !fullName || fullName === wikidataId || !looksLikePerson(fullName)) continue;
       const countryCode = row.countryCode?.value?.toUpperCase();
       const country = countryCode && row.countryLabel?.value ? await prisma.country.upsert({
-        where: { code: countryCode }, update: { name: row.countryLabel.value }, create: { code: countryCode, name: row.countryLabel.value, region: "Регион уточняется по источнику" },
+        where: { code: countryCode }, update: {}, create: { code: countryCode, name: row.countryLabel.value, region: "Регион уточняется по источнику" },
       }) : null;
       const imageCandidate = row.image?.value ? imageMetadata.get(row.image.value) : undefined;
       // Commons identifies the subject of this file as Agather Atuhaire.
@@ -67,7 +67,22 @@ async function main() {
         imageAuthor: image?.author ?? null, imageLicense: image?.license ?? null, imageLicenseUrl: image?.licenseUrl ?? null,
         imageAlt: image ? `Фотография спортсмена ${fullName}` : null, dataStatus: "WIKIDATA_BASIC", countryId: country?.id ?? null,
       };
-      const athlete = await prisma.athlete.upsert({ where: { wikidataId }, update: data, create: { slug, ...data } });
+      const current = await prisma.athlete.findUnique({ where: { wikidataId } });
+      const update = current ? {
+        alternateNames: JSON.stringify([...new Set([...JSON.parse(current.alternateNames), ...JSON.parse(data.alternateNames)])]),
+        externalIds: JSON.stringify({ ...JSON.parse(current.externalIds), wikidata: wikidataId }),
+        birthDate: current.birthDate ?? data.birthDate,
+        deathDate: current.deathDate ?? data.deathDate,
+        birthPlace: current.birthPlace ?? data.birthPlace,
+        gender: current.gender ?? data.gender,
+        specialty: current.specialty ?? data.specialty,
+        countryId: current.countryId ?? data.countryId,
+        ...(!current.imageUrl && image ? {
+          imageUrl: data.imageUrl, imageSourceUrl: data.imageSourceUrl, imageAuthor: data.imageAuthor,
+          imageLicense: data.imageLicense, imageLicenseUrl: data.imageLicenseUrl, imageAlt: data.imageAlt,
+        } : {}),
+      } : {};
+      const athlete = await prisma.athlete.upsert({ where: { wikidataId }, update, create: { slug, ...data } });
       await prisma.factCitation.upsert({
         where: { sourceId_entityType_entityId_fieldName: { sourceId: source.id, entityType: "Athlete", entityId: athlete.id, fieldName: "profile" } },
         update: { note: `Базовый профиль ${wikidataId}; результаты и делегация требуют отдельного источника.` },
@@ -153,7 +168,7 @@ async function fetchCommonsMetadata(urls: string[]) {
 
 async function uniqueSlug(base: string, wikidataId: string) { const candidate = base || wikidataId.toLowerCase(); const existing = await prisma.athlete.findUnique({ where: { slug: candidate }, select: { wikidataId: true } }); return !existing || existing.wikidataId === wikidataId ? candidate : `${candidate}-${wikidataId.toLowerCase()}`; }
 function fileTitleFromUrl(value: string) { try { return decodeURIComponent(new URL(value).pathname.split("/").at(-1) ?? "").replaceAll("_", " "); } catch { return null; } }
-function isReusableLicense(value: string) { return /^(CC BY|CC BY-SA|CC0|Public domain|PD)/i.test(value); }
+function isReusableLicense(value: string) { return /^(?:CC BY(?:-SA)? [1-4]\.\d|CC0|Public domain|PD)/i.test(value) && !/\b(?:NC|ND)\b/i.test(value); }
 function stripHtml(value: string) { return value.replace(/<[^>]*>/g, " ").replace(/&nbsp;|&#160;/g, " ").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim().slice(0, 500); }
 function splitAliases(value?: string) { return Array.from(new Set((value ?? "").split("||").map((item) => item.trim()).filter(Boolean))).slice(0, 20); }
 function looksLikePerson(value: string) { return !/(сборная|national team|olympic team)/i.test(value); }

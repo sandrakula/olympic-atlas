@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@xyflow/react/dist/style.css";
+@import "./editorial.css";
 
 :root { --background: #080e1c; --foreground: #f5f7fc; --muted: #98a6bb; --gold: #d6ad60; --sky: #55b9f3; --panel: #101a2d; --surface: #152238; --border: rgba(255,255,255,.09); }
 @theme inline { --color-background: var(--background); --color-foreground: var(--foreground); --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; }

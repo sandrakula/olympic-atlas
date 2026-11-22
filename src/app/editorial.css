@@ -1,0 +1,297 @@
+.atlas-shell { width: min(100%, 90rem); margin-inline: auto; padding-inline: clamp(1.25rem, 3.35vw, 3rem); }
+.atlas-section { padding-block: clamp(3rem, 6.5vw, 6.5rem); }
+.atlas-kicker { display: flex; align-items: center; gap: .65rem; color: var(--sky); font-size: .72rem; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; }
+.atlas-kicker::before { content: ""; width: 1.4rem; height: 1px; background: currentColor; }
+.atlas-display { margin-top: .6rem; color: var(--foreground); font-size: clamp(2.35rem, 5.1vw, 5rem); font-weight: 900; line-height: .98; letter-spacing: -.065em; }
+.atlas-section-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.6rem; }
+.atlas-action { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; min-height: 2.85rem; padding: .65rem 1rem; border: 1px solid #a8c0df50; border-radius: .35rem; background: #101a2dbd; color: var(--foreground); font-size: .875rem; font-weight: 700; transition: background-color 180ms, border-color 180ms; }
+.atlas-action:hover { background: var(--surface); border-color: var(--sky); }
+.atlas-action-gold { background: var(--gold); border-color: var(--gold); color: var(--background); }
+.atlas-action-gold:hover { background: #edc782; border-color: #edc782; }
+.atlas-text-link { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.5rem; color: #aee0ff; font-weight: 700; font-size: .875rem; }
+.atlas-text-link:hover { color: white; }
+.atlas-text-link svg { flex-shrink: 0; }
+
+.atlas-home-hero { position: relative; isolation: isolate; overflow: hidden; background: #0b1525; border-bottom: 1px solid #c9ddfc24; }
+.atlas-home-art { position: absolute; inset: 0 0 0 19%; z-index: -1; }
+.atlas-home-art img { object-position: 70% 43%; }
+.atlas-home-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg,#0b1525 0%,#0b1525bb 23%,#080e1c12 74%), linear-gradient(0deg,#080e1c 0%,#080e1c0a 29%); }
+.atlas-home-masthead { padding-top: clamp(5.25rem, 9vw, 8.5rem); padding-bottom: clamp(3rem, 6.5vw, 6rem); }
+.atlas-home-masthead .atlas-kicker { color: #e6c683; }
+.atlas-home-masthead h1 { width: min-content; margin-top: .95rem; color: #f5f7fc; font-size: clamp(3.45rem, 9.4vw, 9.1rem); font-weight: 950; line-height: .83; letter-spacing: -.075em; }
+.atlas-home-masthead h1 span { display: block; color: #e2bd76; }
+.atlas-home-intro { max-width: 27rem; margin-top: 1.45rem; color: #d6dfed; font-size: clamp(1rem, 1.55vw, 1.3rem); line-height: 1.5; text-wrap: pretty; }
+.atlas-hero-caption { display: flex; justify-content: space-between; gap: 1rem; min-height: 3.05rem; align-items: center; border-top: 1px solid #d5e5ff1e; color: #b4bfd0; font-size: .72rem; }
+.atlas-hero-caption a:hover { color: white; }
+.atlas-coverage { border-bottom: 1px solid var(--border); background: #101a2d; }
+.atlas-home-stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); }
+.atlas-home-stats a { display: grid; align-content: center; position: relative; min-height: 7.2rem; padding: 1rem clamp(.65rem, 2vw, 1.7rem); border-right: 1px solid var(--border); }
+.atlas-home-stats a:first-child { border-left: 1px solid var(--border); }
+.atlas-home-stats a:hover { background: #16263d; }
+.atlas-home-stats a > svg { position: absolute; right: .8rem; top: .85rem; color: var(--sky); }
+.atlas-home-stats strong { color: #f5f7fc; font-size: clamp(1.8rem, 3.7vw, 3.7rem); line-height: 1; font-weight: 900; letter-spacing: -.055em; }
+.atlas-home-stats a > span { margin-top: .5rem; color: #b4bfd0; font-size: clamp(.72rem, 1vw, .88rem); }
+
+.atlas-featured-games { display: grid; grid-template-columns: 1.45fr 1fr 1fr; gap: clamp(.65rem, 1.35vw, 1.1rem); }
+.atlas-featured-game { min-width: 0; }
+.atlas-featured-link { position: relative; isolation: isolate; display: grid; align-items: end; min-height: clamp(15rem, 31vw, 29rem); overflow: hidden; border-radius: .55rem; border: 1px solid #95bdea33; background: #152238; }
+.atlas-featured-shade { position: absolute; inset: 0; background: linear-gradient(0deg,#080e1c 3%,#080e1cd9 18%,transparent 73%); }
+.atlas-featured-credit { position: absolute; top: .8rem; left: .8rem; background: #080e1cdb; color: #edf3fd; border-radius: .25rem; font-size: .68rem; padding: .25rem .45rem; }
+.atlas-featured-copy { position: relative; padding: 1.15rem 3rem 1.25rem 1.25rem; }
+.atlas-featured-year { color: #e8c885; font-size: clamp(2rem, 4.7vw, 4.75rem); line-height: .95; font-weight: 900; letter-spacing: -.075em; }
+.atlas-featured-copy h3 { color: white; font-size: clamp(1.2rem, 2vw, 1.85rem); font-weight: 800; }
+.atlas-featured-copy h3 + p { margin-top: .3rem; color: #c1cde0; font-size: .8rem; }
+.atlas-featured-arrow { position: absolute; right: 1rem; bottom: 1.3rem; color: #a5dfff; }
+.atlas-directories { border-block: 1px solid var(--border); background: var(--panel); }
+.atlas-contents { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2.5rem; }
+.atlas-contents a { display: grid; grid-template-columns: auto 1fr auto; gap: 0 .75rem; align-items: center; padding: 1.15rem .4rem; border-top: 1px solid #b5cafd30; transition: background-color 180ms; }
+.atlas-contents a:hover { background: var(--surface); }
+.atlas-contents a > svg:first-child { grid-row: span 2; color: var(--gold); }
+.atlas-contents h3 { grid-column: 2; color: white; font-size: clamp(1.15rem, 2.2vw, 1.8rem); font-weight: 800; letter-spacing: -.025em; }
+.atlas-contents span { grid-column: 2; color: #b1c0d3; font-size: .8rem; }
+.atlas-contents a > svg:last-child { grid-area: 1 / 3 / span 2; width: 1rem; color: var(--sky); }
+.atlas-home-graph { display: grid; grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr); gap: 2rem; align-items: center; }
+.atlas-graph-preview { min-width: 0; overflow: hidden; border-radius: .65rem; border: 1px solid #77b7e84d; background: var(--panel); }
+.atlas-graph-preview-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; min-height: 3rem; padding: .65rem 1rem; border-bottom: 1px solid var(--border); font-size: .85rem; }
+.atlas-graph-preview-bar svg { color: var(--gold); }
+.atlas-graph-preview-bar span { margin-left: auto; color: #a8b8cb; font-size: .75rem; }
+.atlas-graph-shortcuts { display: flex; flex-wrap: wrap; gap: .4rem; padding: .6rem .8rem; border-top: 1px solid var(--border); }
+.atlas-graph-shortcuts a { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem; color: #aee0ff; font-size: .75rem; }
+.atlas-graph-shortcuts a:hover { text-decoration: underline; }
+
+@media (max-width: 767px) {
+  .atlas-home-art { inset: 0 0 0 0; }
+  .atlas-home-art img { object-position: 58% 40%; }
+  .atlas-home-art::after { background: linear-gradient(0deg,#080e1c 0%,#080e1cf2 25%,#080e1c29 76%),linear-gradient(90deg,#080e1c99 0%,transparent 85%); }
+  .atlas-home-masthead { padding-top: clamp(9.25rem, 41vw, 16rem); padding-bottom: 1.6rem; }
+  .atlas-home-masthead h1 { font-size: clamp(3.5rem, 12vw, 5.8rem); }
+  .atlas-hero-caption { min-height: 2.7rem; }
+  .atlas-home-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .atlas-home-stats a { min-height: 5.3rem; border-bottom: 1px solid var(--border); }
+  .atlas-home-stats a:nth-child(odd) { border-left: 1px solid var(--border); }
+  .atlas-home-stats a:nth-child(n+3) { border-bottom: 0; }
+  .atlas-featured-games { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .atlas-featured-game:first-child { grid-column: 1 / -1; }
+  .atlas-featured-game:first-child a { min-height: 17rem; }
+  .atlas-featured-link { min-height: 12rem; }
+  .atlas-featured-copy { padding: .7rem .7rem 2.1rem; }
+  .atlas-featured-arrow { right: .6rem; bottom: .55rem; width: 1rem; }
+  .atlas-contents, .atlas-home-graph { grid-template-columns: minmax(0,1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .atlas-home-masthead { animation: analytics-enter 570ms ease-out both; }
+  @supports (animation-timeline: view()) {
+    .atlas-reveal { animation: atlas-section-in linear both; animation-timeline: view(); animation-range: entry var(--reveal-start,0%) entry 85%; }
+  }
+  @keyframes atlas-section-in { from { opacity: .6; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+}
+
+.atlas-directory-hero { border-bottom: 1px solid var(--border); background: radial-gradient(ellipse at 81% 10%,#183650,transparent 61%),linear-gradient(110deg,#080e1c,#101a2d); }
+.atlas-directory-heading { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr); gap: 1.5rem; align-items: end; padding-block: clamp(2.25rem,5.2vw,4.5rem); }
+.atlas-directory-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-block: 1px solid #b1cbed30; }
+.atlas-directory-metrics div { padding: .8rem .5rem .8rem 0; }
+.atlas-directory-metrics dd { font-size: clamp(1.55rem,3.1vw,2.7rem); font-weight: 900; color: #e8c885; line-height: 1.12; letter-spacing: -.055em; }
+.atlas-directory-metrics dt { margin-top: .3rem; font-size: .75rem; color: #bac9dc; }
+.atlas-filters { padding: clamp(.75rem,1.65vw,1.2rem); border: 1px solid #91b7e237; border-radius: .65rem; background: var(--panel); color-scheme: dark; }
+.atlas-filter-search { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .5rem; }
+.atlas-input { border: 1px solid #9cb5d440; border-radius: .35rem; background: #0a1323; color: #edf3fc; }
+.atlas-input::placeholder { color: #9bacbf; }
+.atlas-filter-fields { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: .7rem; margin-top: .9rem; }
+.atlas-athletes-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .85rem; }
+.atlas-athlete-card { position: relative; display: flex; align-items: center; isolation: isolate; overflow: hidden; min-width: 0; min-height: 9.5rem; border: 1px solid #a4bdd933; border-radius: .65rem; padding: 1rem 1.75rem 1rem 4.25rem; background: linear-gradient(105deg,#101a2d 45%,color-mix(in srgb,var(--sport-accent) 13%,#152238)); transition: border-color 180ms, background-color 180ms; }
+.atlas-athlete-card:hover { border-color: var(--sport-accent); }
+.atlas-athlete-copy { position: relative; z-index: 1; display: grid; gap: .2rem; min-width: 0; }
+.atlas-athlete-copy h3 { color: #fff; font-size: clamp(1.12rem,1.85vw,1.65rem); font-weight: 850; line-height: 1.11; letter-spacing: -.032em; overflow-wrap: anywhere; }
+.atlas-athlete-delegation { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .4rem; margin-bottom: .25rem; color: #d1deef; font-size: .7rem; line-height: 1.2; }
+.atlas-athlete-delegation abbr { text-decoration: none; color: #b8cadf; font-size: .62rem; font-weight: 750; letter-spacing: .08em; }
+.atlas-athlete-sport, .atlas-athlete-results { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .4rem; margin-top: .25rem; color: #c3d1e3; font-size: .75rem; }
+.atlas-athlete-sport svg { color: var(--sport-accent); flex-shrink: 0; }
+.atlas-athlete-results { gap: .3rem .75rem; font-size: .7rem; }
+.atlas-athlete-results span:first-child:has(svg) { display: inline-flex; align-items: center; gap: .3rem; color: #e8c885; }
+.atlas-athlete-arrow { position: absolute; z-index: 1; right: .65rem; top: .7rem; color: #a9dfff; transition: transform 180ms; }
+.atlas-athlete-card:hover .atlas-athlete-arrow { transform: translate(2px,-2px); }
+.atlas-athlete-watermark { position: absolute; right: -.35rem; bottom: -.65rem; width: 6.25rem; height: 6.25rem; color: var(--sport-accent); opacity: .13; transform: rotate(-12deg); }
+.atlas-portrait-monogram { background: repeating-linear-gradient(135deg,transparent 0 15px,#71a8dc15 15px 16px,transparent 16px 29px), radial-gradient(ellipse at 74% 17%,#23425d,#101a2d 75%); }
+.atlas-tile-image { position: absolute; inset: 0; background: transparent; }
+.atlas-tile-monogram { inset: 50% auto auto .75rem; width: 2.8rem; height: 3.2rem; border: 1px solid #d6ad6050; border-radius: .4rem; transform: translateY(-50%); }
+.atlas-tile-image img { left: auto !important; width: 47% !important; mask-image: linear-gradient(90deg,transparent 0%,black 32%); }
+.atlas-athlete-card:has([data-portrait]) { padding-left: 1rem; padding-right: 36%; align-items: end; }
+.atlas-athlete-card:has([data-portrait="loaded"]) .atlas-athlete-watermark,
+.atlas-athlete-card:has([data-portrait]) .atlas-tile-monogram { display: none; }
+.atlas-athlete-card:has([data-portrait])::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg,#080e1cba 0%,transparent 65%); pointer-events: none; }
+
+.atlas-athlete-hero { border-bottom: 1px solid var(--border); background: radial-gradient(ellipse at 88% 20%,#1b334b,#080e1c 65%); }
+.atlas-athlete-hero-grid { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,.78fr); align-items: center; gap: clamp(1.4rem,4vw,4rem); }
+.atlas-athlete-hero-portrait { align-self: stretch; position: relative; isolation: isolate; min-width: 0; display: grid; align-items: end; }
+.atlas-athlete-hero-portrait > div { border: 1px solid #b1d4fb38; }
+.atlas-athlete-hero-portrait:not(:has([data-portrait])) > div { max-height: 17rem; aspect-ratio: 16 / 10; }
+.atlas-athlete-hero-portrait:not(:has([data-portrait="loaded"])) .atlas-portrait-monogram { background: repeating-radial-gradient(ellipse at 85% 95%,#80b8e42a 0 1px,transparent 2px 34px),radial-gradient(ellipse at 20% 10%,#23425d,#101a2d); }
+.atlas-athlete-hero-portrait > svg { pointer-events: none; position: absolute; inset: auto 5% 9% auto; width: 33%; height: auto; color: var(--sky); opacity: .15; }
+.atlas-athlete-hero-portrait:has([data-portrait="loaded"]) > svg { display: none; }
+.atlas-career { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); gap: clamp(1.5rem,4vw,4rem); }
+.atlas-career-entry { display: grid; grid-template-columns: 4.05rem minmax(0,1fr); gap: .85rem; padding-block: .8rem; border-top: 1px solid #a4bbd431; }
+.atlas-career-entry > time { color: var(--gold); font-size: 1.35rem; font-weight: 900; letter-spacing: -.04em; }
+.atlas-career-link { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .25rem .45rem; align-items: start; }
+.atlas-career-link:hover strong { color: #a9dfff; }
+
+@media (max-width: 1023px) {
+  .atlas-filter-fields { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .atlas-athletes-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 767px) {
+  .atlas-directory-heading, .atlas-athlete-hero-grid, .atlas-career { grid-template-columns: minmax(0,1fr); }
+  .atlas-athlete-hero-portrait > div { aspect-ratio: 5/4; max-height: 24rem; }
+}
+@media (max-width: 639px) {
+  .atlas-athletes-grid { grid-template-columns: minmax(0,1fr); }
+  .atlas-athlete-card { min-height: 7.9rem; }
+  .atlas-filter-fields { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
+.atlas-profile-medals { display: grid; grid-template-columns: 1.25fr repeat(3,minmax(0,1fr)); border-block: 1px solid #96b9df47; background: #101a2d90; }
+.atlas-profile-medals > div { display: flex; min-width: 0; flex-direction: column-reverse; gap: .3rem; padding: .75rem clamp(.35rem,1.4vw,1rem); border-right: 1px solid var(--border); }
+.atlas-profile-medals > div:last-child { border-right: 0; }
+.atlas-profile-medals dt { font-size: clamp(.64rem,1.15vw,.81rem); color: #b5c4da; }
+.atlas-profile-medals dd { font-size: clamp(1.75rem,3vw,2.6rem); font-weight: 900; line-height: .95; }
+.atlas-profile-related { margin-top: clamp(2.25rem,5vw,4rem); padding-top: 1rem; border-top: 1px solid #99b8da38; }
+
+.atlas-sport-covers { display: grid; grid-template-columns: 1.35fr 1fr 1fr 1fr; gap: .65rem; }
+.atlas-sport-cover { min-width: 0; }
+.atlas-sport-cover-link { position: relative; display: block; isolation: isolate; min-height: clamp(11rem,21vw,21.5rem); overflow: hidden; border: 1px solid #a2c4e845; border-radius: .5rem; background: #152238; }
+.atlas-sport-cover-link:hover { border-color: var(--sky); }
+.atlas-sport-cover-link .atlas-sport-cover-image { position: absolute; inset: 0; border-radius: 0; max-height: none; aspect-ratio: auto; }
+.atlas-sport-cover-link::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg,#080e1c 1%,#080e1cb8 26%,transparent 68%); pointer-events: none; }
+.atlas-sport-cover-link > span { position: absolute; z-index: 1; inset: auto .75rem .7rem; display: flex; align-items: end; justify-content: space-between; gap: .3rem; color: white; font-size: clamp(.9rem,1.65vw,1.45rem); line-height: 1.12; }
+.atlas-sport-cover-link > span svg { flex-shrink: 0; color: #a9dfff; }
+.atlas-sport-cover figcaption { padding: .4rem 0; color: #b4c4d8; font-size: .67rem; line-height: 1.4; }
+.atlas-sport-cover figcaption a { text-decoration: underline; text-underline-offset: 2px; }
+.atlas-sport-index { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .5rem; }
+.atlas-sport-index a { display: flex; justify-content: space-between; gap: .5rem; align-items: center; border: 1px solid #a4bbd435; border-left: 2px solid var(--sport-accent); border-radius: .35rem; padding: .65rem .75rem; background: var(--panel); font-weight: 700; font-size: .82rem; }
+.atlas-sport-index a:hover { background: var(--surface); }
+.atlas-sport-index small { color: var(--sport-accent); }
+.atlas-sport-section { margin-top: clamp(2.5rem,5vw,4rem); }
+.atlas-sport-group-title { color: var(--sport-accent); font-size: clamp(1.55rem,3vw,2.6rem); font-weight: 900; letter-spacing: -.045em; }
+.atlas-sport-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .75rem; margin-top: 1rem; }
+.atlas-sport-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid #a4bbd435; border-radius: .5rem; background: #101a2d; }
+.atlas-sport-card:target { border-color: var(--sport-accent); }
+.atlas-sport-card-heading { position: relative; isolation: isolate; overflow: hidden; min-height: 8.35rem; padding: .9rem 1rem; border-bottom: 1px solid #a3b9d52d; background: linear-gradient(115deg,#152238,color-mix(in srgb,var(--sport-accent) 15%,#132138)); }
+.atlas-sport-card-heading > svg:first-child { color: var(--sport-accent); }
+.atlas-sport-card-watermark { position: absolute; z-index: -1; right: -.4rem; top: -.3rem; width: 8rem; height: 8rem; transform: rotate(-15deg); color: var(--sport-accent); opacity: .13; }
+.atlas-sport-card-heading h3 { margin-top: .5rem; color: white; font-size: 1.17rem; font-weight: 800; }
+.atlas-sport-card-heading p { margin-top: .25rem; color: #c4d1e4; font-size: .79rem; line-height: 1.45; }
+.atlas-sport-body { display: flex; flex: 1; flex-direction: column; gap: .85rem; padding: .9rem 1rem; }
+.atlas-sport-related { display: grid; grid-template-columns: minmax(0,1.05fr) minmax(0,1fr); gap: .6rem; }
+.atlas-sport-related h4 { margin-bottom: .25rem; color: #b4c4da; font-size: .7rem; font-weight: 700; }
+.atlas-sport-related a { display: inline-flex; padding-block: .2rem; color: #aee0ff; font-size: .78rem; overflow-wrap: anywhere; }
+.atlas-sport-related a:hover { text-decoration: underline; }
+
+@media (max-width: 1023px) {
+  .atlas-sport-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 767px) {
+  .atlas-sport-covers, .atlas-sport-index { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 639px) {
+  .atlas-sport-grid { grid-template-columns: minmax(0,1fr); }
+}
+
+.atlas-country-hero { background: radial-gradient(ellipse at 82% 5%,#29415a,transparent 72%),repeating-linear-gradient(150deg,#d6ad6009 0 1px,transparent 1px 24px),#080e1c; }
+.atlas-country-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .8rem; }
+.atlas-country-card { position: relative; display: grid; align-content: start; min-width: 0; padding: 1rem; border: 1px solid #a5c5e438; border-radius: .55rem; background: linear-gradient(120deg,#152238,#101a2d 76%); }
+.atlas-country-card:has(h3 a:hover) { border-color: var(--sky); }
+.atlas-country-card[data-historical="true"] { border-top-color: #d6ad60; background: linear-gradient(115deg,#29231e,#101a2d 70%); }
+.atlas-country-card-main { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: .75rem; min-height: 4.1rem; }
+.atlas-country-card-main h3 { font-size: clamp(1.05rem,1.75vw,1.35rem); font-weight: 800; line-height: 1.14; overflow-wrap: anywhere; }
+.atlas-country-card-main h3 a::after { content: ""; position: absolute; inset: 0; }
+.atlas-country-card-main p { margin-top: .3rem; color: #b4c4d8; font-size: .73rem; }
+.atlas-country-card-main > svg { color: var(--sky); align-self: start; }
+.atlas-country-flag-wrap { display: grid; justify-items: center; gap: .35rem; }
+.atlas-country-code { color: #c9d8ec; font-size: .62rem; font-weight: 800; letter-spacing: .14em; }
+.atlas-delegation-mark { display: inline-grid; min-width: 3.45rem; min-height: 2.7rem; align-content: center; justify-items: center; gap: .2rem; border: 1px dashed #d6ad607a; border-radius: .3rem; padding: .3rem; color: #e9c982; background: #d6ad6011; font-weight: 800; font-size: .75rem; letter-spacing: .08em; }
+.atlas-country-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .5rem; margin-top: .85rem; padding-top: .65rem; border-top: 1px solid var(--border); }
+.atlas-country-metrics div { display: flex; flex-direction: column-reverse; gap: .2rem; }
+.atlas-country-metrics dt { color: #adbdd2; font-size: .71rem; }
+.atlas-country-metrics dd { color: #f5f7fc; font-size: 1.28rem; font-weight: 850; line-height: 1.15; }
+.atlas-country-metrics dd span { color: #aebdd1; }
+.atlas-country-nocs { margin-top: .65rem; color: #b9cee7; font-size: .69rem; font-weight: 650; }
+@media (max-width: 1023px) {
+  .atlas-country-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 639px) {
+  .atlas-country-grid { grid-template-columns: minmax(0,1fr); }
+}
+
+.atlas-games-hero { background: radial-gradient(ellipse at 11% 3%,#66482535,transparent 66%), radial-gradient(ellipse at 91% 6%,#25568262,transparent 66%),repeating-linear-gradient(135deg,#90bff70c 0 1px,transparent 1px 36px),#080e1c; }
+.atlas-games-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); border: 1px solid #9db9d63b; border-radius: .5rem; background: #101a2d; }
+.atlas-games-metric { padding: clamp(.65rem,1.5vw,1.15rem); border-right: 1px solid var(--border); }
+.atlas-games-metric:last-child { border-right: 0; }
+.atlas-games-metric > p:first-child { color: #e8c885; font-size: clamp(1.75rem,3vw,2.8rem); line-height: 1; }
+.atlas-games-metric > p:last-child { color: #a9bbd0; }
+.atlas-games-timeline { padding-block: clamp(1.35rem,3vw,2.35rem); border-block: 1px solid var(--border); background: #101a2d; }
+.atlas-timeline-tools { display: flex; justify-content: space-between; align-items: end; gap: .65rem; margin-top: 1rem; }
+.atlas-timeline-tools .atlas-action { min-height: 2.25rem; padding: .35rem .65rem; }
+.atlas-timeline-track { position: relative; display: flex; align-items: stretch; gap: .5rem; margin-top: .85rem; padding: .3rem .15rem .7rem; overflow-x: auto; overscroll-behavior-inline: contain; scroll-snap-type: x proximity; }
+.atlas-timeline-item { display: grid; align-content: start; flex: 0 0 auto; scroll-snap-align: start; min-width: 7.25rem; max-width: 12rem; padding: .5rem .65rem; border: 1px solid #a4bbd434; border-top: 2px solid var(--edition-color); border-radius: .35rem; background: #0a1323; }
+[data-season="SUMMER"] { --edition-color: #e3bd74; }
+[data-season="WINTER"] { --edition-color: #79c9fa; }
+[data-status="CANCELLED"], [data-status="INTERCALATED"] { --edition-color: #eeaaa0; }
+.atlas-timeline-item[data-status="CANCELLED"] { border-style: dashed; }
+.atlas-timeline-item:hover, .atlas-timeline-item:focus-visible { background: #1b2d46; }
+.atlas-timeline-item strong { font-size: 1.18rem; line-height: 1.15; font-weight: 900; color: var(--edition-color); }
+.atlas-timeline-item > span { margin-top: .25rem; font-size: .78rem; font-weight: 650; }
+.atlas-timeline-item small { margin-top: .3rem; color: #b1c6df; font-size: .66rem; }
+.atlas-games-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .9rem; align-items: stretch; margin-top: 1rem; }
+.atlas-game-card { min-width: 0; overflow: hidden; border: 1px solid #a4bbd435; border-radius: .55rem; background: var(--panel); transition: border-color 180ms; }
+.atlas-game-card:hover { border-color: var(--edition-color); }
+.atlas-game-card > a { display: flex; flex-direction: column; height: 100%; }
+.atlas-game-card > a:focus-visible { outline-offset: -4px; }
+.atlas-game-card-image { position: relative; isolation: isolate; overflow: hidden; min-height: 8.4rem; border-bottom: 2px solid var(--edition-color); }
+.atlas-game-card-shade { position: absolute; inset: 0; background: linear-gradient(0deg,#080e1cee,#080e1c35 70%); }
+.atlas-game-card-year { position: absolute; left: 1rem; bottom: 0; color: var(--edition-color); font-size: clamp(2.7rem,5vw,4rem); font-weight: 900; letter-spacing: -.07em; line-height: 1.05; }
+.atlas-game-card-credit { position: absolute; right: .6rem; top: .55rem; display: none; border-radius: .2rem; padding: .2rem .35rem; background: #080e1cdd; color: #e0e9f7; font-size: .65rem; }
+.atlas-game-card-image:has([data-edition-media="primary"]) .atlas-game-photo-credit:not(:empty),
+.atlas-game-card-image:has([data-edition-media="illustration"]) .atlas-game-art-credit { display: block; }
+.atlas-game-card-copy { display: grid; flex: 1; grid-template-rows: auto auto auto 1fr auto; gap: .5rem; padding: .85rem 1rem; }
+.atlas-game-card-copy h3 { color: white; font-size: clamp(1.15rem,2vw,1.5rem); font-weight: 850; line-height: 1.18; }
+.atlas-game-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .75rem; color: var(--edition-color); font-size: .73rem; font-weight: 750; }
+.atlas-game-card-meta > span:first-child { display: inline-flex; align-items: center; gap: .33rem; }
+.atlas-game-card-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .25rem; margin-top: .2rem; padding-top: .6rem; border-top: 1px solid var(--border); }
+.atlas-game-card-stats span { color: #a9bbd0; }
+@media (max-width: 1023px) {
+  .atlas-games-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 639px) {
+  .atlas-games-grid { grid-template-columns: minmax(0,1fr); }
+  .atlas-games-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .atlas-games-metric:nth-child(2) { border-right: 0; }
+  .atlas-games-metric:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+}
+
+.atlas-analysis-hero { border-bottom: 1px solid var(--border); background: radial-gradient(ellipse at 76% 0%,#1b3a55,transparent 72%), repeating-linear-gradient(90deg,#9fbfe411 0 1px,transparent 1px 8.33%), #080e1c; }
+.atlas-analytics-panel { border: 1px solid #a5c5e432; border-radius: .65rem; background: linear-gradient(160deg,#152238,#101a2d 62%); }
+.atlas-analysis-filters { border-top: 2px solid var(--sky); color-scheme: dark; }
+.atlas-analysis-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 1px; overflow: hidden; border: 1px solid #a5c5e435; border-left: 3px solid var(--gold); border-radius: .4rem; background: #2a3b53; }
+.atlas-analysis-metrics[data-accent="blue"] { border-left-color: var(--sky); }
+.atlas-analysis-metrics dd { letter-spacing: -.045em; }
+.atlas-analysis-metrics dd:last-child:not(:nth-child(2)) { letter-spacing: normal; }
+
+.atlas-explore { background: radial-gradient(ellipse 68% 26rem at 77% 0%,#183854,transparent 90%), var(--background); }
+.atlas-explore-form { border: 1px solid #7cc9f778; border-radius: .75rem; background: #101a2de8; box-shadow: 0 12px 35px #0408136e; }
+.atlas-explore-form .atlas-input:focus { border-color: var(--sky); }
+.atlas-explore-panel { border: 1px solid #a5c5e435; border-radius: .55rem; background: #101a2d; }
+.atlas-explore-answer { border-top: 2px solid var(--gold); }
+.atlas-explore-status { width: fit-content; padding: .3rem .55rem; border: 1px solid #d6ad604d; border-radius: .3rem; color: #e8c885; background: #d6ad6012; font-size: .75rem; font-weight: 700; }
+.atlas-explore-example, .atlas-explore-result { border: 1px solid #a5c5e435; border-radius: .4rem; background: linear-gradient(100deg,#152238,#182c43); transition: border-color 150ms; }
+.atlas-explore-example:hover, .atlas-explore-result:focus-within { border-color: var(--sky); }
+@media (max-width: 767px) {
+  .atlas-analysis-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
+.atlas-edition-fallback-caption { display: none; }
+.atlas-edition-hero:has([data-edition-media="illustration"]) .atlas-edition-fallback-caption { display: block; }
+@media (min-width: 900px) {
+  .atlas-analysis-hero-content { display: grid; align-items: end; grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr); gap: clamp(1.5rem,4vw,4rem); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .atlas-home-stats strong { animation: analytics-enter 550ms ease-out both; animation-delay: 100ms; }
+}

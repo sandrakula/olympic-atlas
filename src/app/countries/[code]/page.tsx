@@ -1,20 +1,70 @@
-import { ArrowLeft, Flag, Medal, Trophy, Users } from "lucide-react";
-import Link from "next/link";
-import { OpenGraphLink } from "@/components/open-graph-link";
-import { notFound } from "next/navigation";
-import { AthleteImage } from "@/components/athlete-image";
-import { atlasMetadata } from "@/lib/metadata";
+import { ArrowLeft, ArrowUpRight, Flag } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { AthleteCard } from "@/components/athlete-card";
+import { CountryFlag } from "@/components/country-flag";
+import { OpenGraphLink } from "@/components/open-graph-link";
+import { atlasMetadata } from "@/lib/metadata";
 import { getCountryProfile } from "@/lib/repositories/athletes";
 
 export const dynamic = "force-dynamic";
-type CountryParams = { params: Promise<{ code: string }> };
+const number = new Intl.NumberFormat("ru-RU");
 
-export async function generateMetadata({ params }: CountryParams): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps<"/countries/[code]">): Promise<Metadata> {
   const { code } = await params;
   const country = /^[a-z]{3}$/i.test(code) ? await getCountryProfile(code) : null;
   return country ? atlasMetadata("/countries/" + country.code.toLowerCase(), country.name, "Олимпийские связи и спортсмены. " + (country.historicalName ?? country.region) + ".") : {};
 }
 
-export default async function CountryPage({ params }: CountryParams) { const { code } = await params; if (!/^[a-z]{3}$/i.test(code)) notFound(); const country = await getCountryProfile(code); if (!country) notFound(); const allParticipations = country.committees.flatMap((noc) => noc.participations); const sports = new Map(allParticipations.map((item) => [item.sport.id, item.sport])); const editions = new Map(allParticipations.map((item) => [item.edition.id, item.edition])); const medals = country.committees.reduce((sum, noc) => sum + noc.medalResults.length, 0); return <main><section className="relative overflow-hidden border-b border-white/[.08]"><div className="page-grid absolute inset-0 opacity-60" /><div className="relative mx-auto max-w-[90rem] px-5 py-16 sm:px-8 lg:px-12 lg:py-24"><Link href="/countries" className="inline-flex items-center gap-2 text-sm text-[#98a6bb]"><ArrowLeft className="size-4" />Все страны</Link><div className="mt-4 flex flex-wrap gap-2"><OpenGraphLink type="Country" id={country.id} />{country.committees.map((noc) => <OpenGraphLink key={noc.id} type="NationalOlympicCommittee" id={noc.id}>НОК {noc.code} в графе</OpenGraphLink>)}</div><p className="mt-9 text-xs font-bold uppercase tracking-[.2em] text-[#55b9f3]">{country.code} · {country.region}</p><h1 className="mt-4 text-5xl font-black tracking-[-.055em] text-white sm:text-7xl">{country.name}</h1>{country.historicalName && <p className="mt-4 text-lg text-[#d6ad60]">{country.historicalName}</p>}<div className="mt-9 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4"><Metric icon={Users} value={country._count.athletes} label="профилей" /><Metric icon={Flag} value={country.committees.length} label="НОК" /><Metric icon={Trophy} value={sports.size} label="видов спорта" /><Metric icon={Medal} value={medals} label="медалей" /></div></div></section><section className="mx-auto max-w-[90rem] px-5 py-14 sm:px-8 lg:px-12"><h2 className="text-3xl font-black text-white">Связанные спортсмены</h2><p className="mt-3 text-sm text-[#98a6bb]">Показываются биографическая связь со страной и отдельно подтверждённые участия за НОК. Связано с {editions.size} изданиями.{country._count.athletes > country.athletes.length && " Показаны первые " + country.athletes.length + " профилей."}</p>{country.hostedEditions.length > 0 && <div className="mt-4 flex flex-wrap gap-2" aria-label="Игры в стране">{country.hostedEditions.map((edition) => <Link key={edition.slug} href={"/games/" + edition.slug} className="inline-flex min-h-10 items-center rounded-full border border-white/15 px-3 text-sm text-[#aee0ff]">{edition.name}</Link>)}</div>}{!country.athletes.length && <p className="mt-6 rounded-2xl border border-dashed border-white/15 p-5 text-[#aebdd1]">Связанные профили спортсменов пока отсутствуют.</p>}<div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{country.athletes.map((athlete) => <Link key={athlete.id} href={`/athletes/${athlete.slug}`} className="group rounded-3xl border border-white/[.09] bg-[#101a2d] p-3"><AthleteImage athlete={athlete} /><div className="p-3 pt-5"><h3 className="text-xl font-black text-white">{athlete.fullName}</h3><p className="mt-2 text-sm text-[#98a6bb]">{athlete.participations[0]?.sport.name ?? athlete.specialty ?? "Спорт уточняется"}</p></div></Link>)}</div></section></main>; }
-function Metric({ icon: Icon, value, label }: { icon: typeof Users; value: number; label: string }) { return <div className="rounded-2xl border border-white/[.09] bg-[#101a2d] p-4"><Icon className="size-4 text-[#55b9f3]" /><b className="mt-3 block text-2xl text-white">{value}</b><span className="text-xs text-[#78889f]">{label}</span></div>; }
+export default async function CountryPage({ params }: PageProps<"/countries/[code]">) {
+  const { code } = await params;
+  if (!/^[a-z]{3}$/i.test(code)) notFound();
+  const country = await getCountryProfile(code);
+  if (!country) notFound();
+  const historic = country.activeTo !== null;
+  const metrics = [
+    { label: "Профили", value: country._count.athletes },
+    { label: "Комитеты", value: country.committees.length },
+    { label: "Виды спорта", value: country.sportCount },
+    { label: "Медали в базе", value: country.medals },
+  ];
+
+  return <main>
+    <header className="atlas-directory-hero atlas-country-hero">
+      <div className="atlas-shell py-7 sm:py-10">
+        <Link href="/countries" className="atlas-text-link"><ArrowLeft size={16} aria-hidden />Все страны</Link>
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
+          {historic ? <span className="atlas-delegation-mark"><Flag size={16} aria-hidden />{country.code}</span>
+            : <CountryFlag code={country.code} name={country.name} className="w-20 sm:w-24" />}
+          <div>
+            <p className="atlas-kicker">{country.region}{historic && ` · ${country.activeFrom ?? "…"}–${country.activeTo}`}</p>
+            <h1 className="atlas-display">{country.name}</h1>
+          </div>
+        </div>
+        {country.historicalName && <p className="mt-4 text-lg text-[#e3c784]">{country.historicalName}</p>}
+        <dl className="atlas-profile-medals mt-6 max-w-3xl">
+          {metrics.map(({ label, value }) => <div key={label}><dt>{label}</dt><dd className="text-[#e8c885]">{value ? number.format(value) : "—"}</dd></div>)}
+        </dl>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <OpenGraphLink type="Country" id={country.id} />
+          {country.committees.map((noc) => <OpenGraphLink key={noc.id} type="NationalOlympicCommittee" id={noc.id}>НОК {noc.code} в графе</OpenGraphLink>)}
+        </div>
+      </div>
+    </header>
+    <section className="atlas-shell py-10 sm:py-14">
+      <h2 className="text-3xl font-black tracking-tight">Связанные спортсмены</h2>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-[#b4bfd0]">Профили связаны со страной через биографию или подтверждённое участие за её НОК.</p>
+      {country.athletes.length ? <>
+        <Link href={{ pathname: "/athletes", query: { country: country.code } }} className="atlas-text-link mt-3">Все спортсмены страны <ArrowUpRight size={16} aria-hidden /></Link>
+        <div className="atlas-athletes-grid mt-4">{country.athletes.map((athlete) => <AthleteCard key={athlete.id} athlete={athlete} latest={athlete.participations[0]} />)}</div>
+      </> : <p className="mt-4 rounded-lg border border-dashed p-4 text-sm text-[#b4bfd0]">Связанные профили пока отсутствуют.</p>}
+      {country.hostedEditions.length > 0 && <section className="atlas-profile-related">
+        <h2 className="text-2xl font-black">Игры в стране</h2>
+        <div className="mt-3 flex flex-wrap gap-2">{country.hostedEditions.map((edition) =>
+          <Link key={edition.slug} href={`/games/${edition.slug}`} className="atlas-action">{edition.name}<ArrowUpRight size={15} aria-hidden /></Link>)}
+        </div>
+      </section>}
+    </section>
+  </main>;
+}

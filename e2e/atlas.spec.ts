@@ -96,6 +96,44 @@ test("athlete search, enriched profile and comparison", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Подтверждённые медали в базе" })).toBeVisible();
 });
 
+test("expanded content links move from countries and sports to athletes and Games", async ({ page }) => {
+  await page.goto("/countries?q=FRA");
+  await expect(page.getByRole("img", { name: "Флаг · Франция" })).toBeVisible();
+  await page.getByRole("link", { name: "Франция", exact: true }).click();
+  await expect(page.getByRole("img", { name: "Флаг · Франция" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Все спортсмены страны/ })).toHaveAttribute("href", /country=FRA/);
+
+  await page.goto("/sports#cycling");
+  const cycling = page.locator("#cycling");
+  await expect(cycling.getByRole("heading", { name: "Велоспорт" })).toBeVisible();
+  await expect(cycling.getByText("Трековые велогонки")).toBeVisible();
+  await expect(cycling.getByRole("link", { name: /Париж 2024/ })).toBeVisible();
+
+  await page.goto("/games");
+  const timeline = page.getByRole("navigation", { name: "Издания Олимпийских игр по годам" });
+  await expect(timeline.getByRole("link", { name: /Токио 2020.*перенесены на 2021/i })).toContainText("2020 → 2021");
+  await page.getByPlaceholder("Год, название или город").fill("2021");
+  await expect(page.locator("article").getByText("Перенесены · проведены в 2021")).toBeVisible();
+  await page.goto("/games/tokyo-2020");
+  await expect(page.getByRole("heading", { name: "Токио 2020", exact: true })).toBeVisible();
+  await expect(page.getByText("Перенесены · проведены в 2021")).toBeVisible();
+
+  await page.goto("/athletes/leon-marchand");
+  const portrait = page.getByRole("img", { name: "Фотография Леон Маршан" });
+  await expect(portrait).toBeVisible();
+  await expect(portrait).toHaveAttribute("src", /athletes%2Fq63246909/);
+  await expect(page.getByRole("link", { name: "Оригинал на Wikimedia Commons" })).toBeVisible();
+  await page.route((url) => url.pathname === "/_next/image" && url.searchParams.get("url")?.includes("q63246909") === true,
+    (route) => route.fulfill({ status: 404 }));
+  await page.reload();
+  await expect(portrait).toHaveCount(0);
+  await expect(page.getByText("ЛМ", { exact: true })).toBeVisible();
+
+  await page.goto("/games/paris-2024?results=2#results");
+  await expect(page.getByRole("navigation", { name: "Страницы медальных результатов" })).toContainText("Страница 2");
+  await expect(page.getByText(/1[\s\u00a0]044 медальным записям/)).toBeVisible();
+});
+
 test("graph search, neighborhoods, sources and navigation from a logical answer", async ({ page }) => {
   await page.goto("/knowledge-graph");
   await page.getByRole("searchbox", { name: "Поиск по графу" }).fill("Симона Байлз");
@@ -180,4 +218,50 @@ test("metadata, sitemap, robots and missing records", async ({ page, request }) 
     expect(response?.status(), path).toBe(404);
     await expect(page.getByRole("heading", { name: "Такого объекта нет в базе" })).toBeVisible();
   }
+});
+
+test("editorial cards distinguish photos, missing records and historical identities", async ({ page }) => {
+  await page.goto("/athletes?sort=name");
+  const grid = page.locator(".atlas-athletes-grid");
+  await expect(grid.getByRole("link")).toHaveCount(24);
+  await expect(grid.locator(".atlas-tile-monogram").first()).toBeVisible();
+  expect(await grid.getByRole("link").first().evaluate((card) => card.getBoundingClientRect().height)).toBeLessThan(225);
+  await page.getByRole("navigation", { name: "Страницы спортсменов" }).getByRole("link", { name: "Дальше" }).click();
+  await expect(page.getByRole("navigation", { name: "Страницы спортсменов" })).toContainText("Страница 2");
+
+  await page.goto("/athletes?q=Леон+Маршан");
+  await expect(grid.getByRole("img", { name: "Фотография Леон Маршан" })).toBeVisible();
+  await expect(grid.getByRole("img", { name: "Флаг · Франция" })).toBeVisible();
+  await expect(grid.getByText(/Медалей · /)).toBeVisible();
+
+  await page.goto("/countries?q=URS");
+  const historic = page.locator("article[data-historical=true]").filter({ hasText: "СССР" });
+  await expect(historic.getByText("URS", { exact: true }).first()).toBeVisible();
+  await expect(historic.getByRole("img")).toHaveCount(0);
+  await expect(historic.locator("dd", { hasText: "—" })).not.toHaveCount(0);
+
+  await page.goto("/sports");
+  const sports = page.locator("article.atlas-sport-card");
+  await expect(sports).toHaveCount(39);
+  expect(await sports.locator(".atlas-sport-card-heading > svg:first-child").evaluateAll((icons) =>
+    new Set(icons.map((icon) => icon.innerHTML)).size)).toBe(39);
+  await expect(page.locator(".atlas-sport-covers figure")).toHaveCount(4);
+  for (const cover of await page.locator(".atlas-sport-covers figure").all()) {
+    await expect(cover.getByRole("img")).toBeVisible();
+    await expect(cover.getByRole("link", { name: /CC BY/ })).toHaveAttribute("href", /^https:\/\/creativecommons\.org\//);
+  }
+});
+
+test("the Games timeline jumps by era and exposes cancelled and postponed editions", async ({ page }) => {
+  await page.goto("/games");
+  const timeline = page.getByRole("navigation", { name: "Издания Олимпийских игр по годам" });
+  await page.getByRole("group", { name: "Перейти к году" }).getByRole("button", { name: "2020" }).click();
+  const tokyo = timeline.getByRole("link", { name: /Токио 2020.*2021/ });
+  await expect(tokyo).toBeFocused();
+  await expect(tokyo).toBeInViewport();
+  await page.keyboard.press("Home");
+  await expect(timeline.getByRole("link", { name: /Афины 1896/ })).toBeFocused();
+  await page.getByRole("group", { name: "Статус" }).getByRole("button", { name: "Особые" }).click();
+  await page.getByRole("button", { name: "1896–1944" }).click();
+  await expect(page.locator("article[data-status=CANCELLED]")).toHaveCount(5);
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, CircleHelp, Clock3, Copy, Database, ExternalLink, LoaderCircle, Network, Search, X } from "lucide-react";
+import { ArrowUpRight, BookOpen, CircleHelp, Clock3, Copy, Database, ExternalLink, LoaderCircle, Network, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { examples, exploreLimits, ruleInfo, type Answer, type AnswerRow, type SearchPage } from "@/lib/explore/model";
@@ -11,9 +11,9 @@ type HistoryItem = { mode: Mode; query: string };
 type Result = { mode: "question"; value: Answer } | { mode: "search"; value: SearchPage };
 const historyKey = "olympic-atlas:explore-v1";
 const historyEvent = "atlas-explore-history";
-const button = "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold text-[#d9e6f7] hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-[#55b9f3] disabled:opacity-50";
-const gold = "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#d6ad60] px-5 font-bold text-[#080e1c] hover:bg-[#e3bc74] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d6ad60] disabled:opacity-55";
-const panel = "rounded-[1.5rem] border border-white/10 bg-[#101a2d]";
+const button = "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-[#d9e6f7] hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-[#55b9f3] disabled:opacity-50";
+const gold = "inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#d6ad60] px-5 font-bold text-[#080e1c] hover:bg-[#e3bc74] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d6ad60] disabled:opacity-55";
+const panel = "atlas-explore-panel";
 const outline = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#55b9f3]";
 
 function subscribe(listener: () => void) {
@@ -128,8 +128,8 @@ export function ExploreWorkspace({ initialQuery, initialAnswer, initialError = "
   return (
     <>
       <form onSubmit={onSubmit} className="relative mx-auto max-w-[90rem] px-5 pb-6 sm:px-8 lg:px-12">
-        <div className={panel + " max-w-5xl p-3 shadow-[0_20px_60px_#04081380] sm:p-4"}>
-          <div className="mb-3 flex flex-wrap gap-2" aria-label="Режим поиска">
+        <div className="atlas-explore-form p-3 sm:p-4">
+          <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Режим поиска">
             <ModeButton active={mode === "question"} onClick={() => mode !== "question" && reset("question")}><CircleHelp size={16} /> Вопрос</ModeButton>
             <ModeButton active={mode === "search"} onClick={() => mode !== "search" && reset("search")}><Database size={16} /> Поиск по базе</ModeButton>
           </div>
@@ -139,7 +139,7 @@ export function ExploreWorkspace({ initialQuery, initialAnswer, initialError = "
               <input ref={field} type="search" name="q" aria-label={mode === "question" ? "Вопрос об Олимпийских играх" : "Поиск по базе знаний"}
                 value={query} onChange={(event) => setQuery(event.target.value)} maxLength={exploreLimits.query}
                 placeholder={mode === "question" ? "Спросите об Олимпийских играх, спортсменах или медалях…" : "Имя, город, делегация или вид спорта"}
-                className={"min-h-13 w-full appearance-none rounded-xl border border-white/15 bg-[#080e1c] py-3 pr-12 pl-12 text-base text-white placeholder:text-[#a6b3c8] [&::-webkit-search-cancel-button]:hidden " + outline} />
+                className={"atlas-input min-h-13 w-full appearance-none py-3 pr-12 pl-12 text-base text-white placeholder:text-[#a6b3c8] [&::-webkit-search-cancel-button]:hidden " + outline} />
               {query && <button type="button" onClick={() => reset(mode, true)} aria-label="Очистить запрос" className={"absolute top-1 right-1 grid size-11 place-items-center rounded-lg text-[#b4bfd0] hover:bg-white/10 " + outline}><X size={18} /></button>}
             </div>
             <button className={gold} disabled={!query.trim() || pending}>{pending ? <><LoaderCircle className="size-4 motion-safe:animate-spin" /> Ищу</> : "Найти"}</button>
@@ -162,7 +162,7 @@ export function ExploreWorkspace({ initialQuery, initialAnswer, initialError = "
             onPage={(page) => void submit(submitted, "search", page)} />}
           {!result && !pending && !error && <section className={panel + " p-5 sm:p-6"}>
             <h2 className="text-xl font-bold text-white">Вопросы к базе</h2>
-            <p className="mt-2 text-[#aebed2]">Выберите пример, чтобы увидеть ответ, правило и подтверждающие записи.</p>
+
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {examples.slice(0, 4).map((item) => <Example key={item.label} item={item} onClick={() => void submit(item.query, "question")} />)}
             </div>
@@ -196,8 +196,8 @@ function ModeButton({ active, onClick, children }: { active: boolean; onClick: (
 }
 
 function Example({ item, onClick }: { item: typeof examples[number]; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className={"rounded-2xl border border-white/10 bg-[#152238] p-4 text-left transition-colors hover:border-[#55b9f3]/55 " + outline}>
-    <span className="block text-xs font-bold uppercase tracking-[.14em] text-[#d6ad60]">{item.label}</span>
+  return <button type="button" onClick={onClick} className={"atlas-explore-example p-4 text-left " + outline}>
+    <span className="flex items-center justify-between gap-2 text-xs font-bold text-[#e8c885]">{item.label}<ArrowUpRight size={17} aria-hidden /></span>
     <span className="mt-2 block text-base font-semibold leading-6 text-white">{item.query}</span>
   </button>;
 }
@@ -212,9 +212,9 @@ function AnswerView({ answer, copyMessage, onCopy, onSearch }: { answer: Answer;
   const answered = answer.status === "partial" || answer.status === "complete";
   const medals = answer.intent === "athleteMedals" || answer.intent === "eventMedal";
   return (
-    <section aria-labelledby="atlas-answer" className={panel + " p-5 sm:p-7 motion-safe:animate-[atlas-node-in_180ms_ease-out]"}>
+    <section aria-labelledby="atlas-answer" className={panel + " atlas-explore-answer p-5 sm:p-7 motion-safe:animate-[analytics-enter_260ms_ease-out]"}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p role="status" className="text-sm font-semibold text-[#d6ad60]">{statusText[answer.status]}</p>
+        <p role="status" className="atlas-explore-status">{statusText[answer.status]}</p>
         {answered && <button className={button} onClick={onCopy}><Copy size={16} /> Копировать ответ</button>}
       </div>
       {copyMessage && <p role="status" className="mt-2 text-sm text-[#a9dfff]">{copyMessage}</p>}
@@ -229,7 +229,7 @@ function AnswerView({ answer, copyMessage, onCopy, onSearch }: { answer: Answer;
         <div className="mt-5 grid gap-3 sm:grid-cols-2">{answer.rows.map((row) => <ResultCard key={row.key} title={row.title} node={row.node} detail={row.detail} value={row.value} proof={row.proof} />)}</div>
       )}
       {answer.truncated && <p className="mt-4 text-sm text-[#aebed2]">Выдача или список источников ограничены первыми записями.</p>}
-      {rule && (answered || answer.status === "empty") && <details className="mt-6 rounded-2xl border border-white/10 bg-[#0b1525] p-4 sm:p-5">
+      {rule && (answered || answer.status === "empty") && <details className="mt-6 rounded-lg border border-[#55b9f3]/35 bg-[#0b1525] p-4 sm:p-5">
         <summary className={"cursor-pointer font-bold text-white " + outline}><BookOpen className="mr-2 inline size-4 text-[#55b9f3]" />Как получен ответ?</summary>
         <p className="mt-4 text-sm font-bold text-[#d6ad60]">Правило «{rule.name}»</p>
         <ol className="mt-3 space-y-2 border-l border-[#55b9f3]/35 pl-5 text-sm leading-6 text-[#d9e6f7]">
@@ -259,7 +259,7 @@ const graphHref = (node: GraphNode) => "/knowledge-graph?node=" + encodeURICompo
 
 function ResultCard({ title, node, detail, value, proof }: { title: string; node: GraphNode | null; detail?: string; value?: number; proof?: string }) {
   const navigation = node?.href;
-  return <article className="min-w-0 rounded-2xl border border-white/10 bg-[#152238] p-4">
+  return <article className="atlas-explore-result min-w-0 p-4">
     {node && <p className="text-xs font-bold uppercase tracking-[.12em]" style={{ color: graphTypes[node.type].color }}>{graphTypes[node.type].label}</p>}
     <h3 className="mt-2 text-lg font-bold wrap-anywhere text-white">{title}</h3>
     {detail && <p className="mt-2 text-sm leading-6 wrap-anywhere text-[#bacbe0]">{detail}{value === undefined ? "" : " · Изданий: " + value}</p>}
