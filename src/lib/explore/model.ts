@@ -1,3 +1,4 @@
+import type { MatchKind } from "./search-text";
 import type { GraphNode } from "@/lib/graph/model";
 
 export const exploreLimits = { query: 240, tokens: 12, page: 50, hits: 10, rows: 20, facts: 60 } as const;
@@ -40,7 +41,8 @@ export type AnswerRow = {
 export type AnswerStatus = "unrecognized" | "not_found" | "ambiguous" | "empty" | "partial" | "complete";
 export type Answer = {
   status: AnswerStatus; intent: Intent | null; summary: string; entities: GraphNode[];
-  rows: AnswerRow[]; facts: FactEvidence[]; value?: number; truncated?: boolean;
+  rows: AnswerRow[]; facts: FactEvidence[]; corrections?: Correction[]; value?: number; truncated?: boolean;
 };
-export type SearchHit = GraphNode & { excerpt: string };
-export type SearchPage = { hits: SearchHit[]; page: number; more: boolean };
+export type SearchHit = GraphNode & { excerpt: string; match: MatchKind; matchedText: string };
+export type Correction = { query: string; node?: GraphNode };
+export type SearchPage = { hits: SearchHit[]; page: number; more: boolean; corrections?: Correction[]; relatedQuestion?: string };

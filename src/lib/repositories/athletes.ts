@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { matchingDirectoryIds } from "./explore-search";
 
 export type AthleteFilters = { query?: string; country?: string; sport?: string; edition?: string; season?: "SUMMER" | "WINTER"; medal?: "any" | "GOLD" | "SILVER" | "BRONZE"; sort?: "featured" | "name" | "medals" | "gold" | "recent"; page?: number; pageSize?: number };
 type RankedAthlete = { id: number; medalCount: bigint; goldCount: bigint; lastYear: number | null };
@@ -19,10 +20,17 @@ function nameCondition(query?: string) {
 }
 
 export async function getAthleteCatalog(filters: AthleteFilters = {}) {
+  const matchesName = nameCondition(filters.query);
+  const ordinary = await getAthleteCatalogPage(filters, matchesName);
+  if (!matchesName || ordinary.total) return ordinary;
+  const ids = matchingDirectoryIds(filters.query!, "Athlete");
+  return ids.length ? getAthleteCatalogPage(filters, Prisma.sql`a.id IN (${Prisma.join(ids)})`) : ordinary;
+}
+
+async function getAthleteCatalogPage(filters: AthleteFilters, matchesName: Prisma.Sql | null) {
   const pageSize = Number.isFinite(filters.pageSize) ? Math.min(48, Math.max(12, Math.trunc(filters.pageSize!))) : 24;
   const page = Number.isSafeInteger(filters.page) ? Math.min(1_000_000, Math.max(1, filters.page!)) : 1;
   const conditions: Prisma.Sql[] = [];
-  const matchesName = nameCondition(filters.query);
   if (matchesName) conditions.push(matchesName);
   if (filters.country) conditions.push(Prisma.sql`(c.code = ${filters.country} OR EXISTS (
     SELECT 1 FROM Participation p JOIN NationalOlympicCommittee n ON n.id=p.nocId
@@ -137,10 +145,13 @@ export async function getAthleteComparison(first?: string, second?: string) {
 export async function getCountryDirectory(query: string, requestedPage: number) {
   const search = query.trim().slice(0, 100);
   const names = [...new Set([search, search.toLowerCase(), search.charAt(0).toUpperCase() + search.slice(1).toLowerCase()])];
+  const countryIds = matchingDirectoryIds(search, "Country");
+  const nocIds = matchingDirectoryIds(search, "NationalOlympicCommittee");
   const where: Prisma.CountryWhereInput = search ? { OR: [
     ...names.map((term) => ({ name: { contains: term } })),
     { code: search.toUpperCase() },
-    { committees: { some: { code: search.toUpperCase() } } },
+    { id: { in: countryIds } },
+    { committees: { some: { OR: [{ code: search.toUpperCase() }, { id: { in: nocIds } }] } } },
   ] } : {};
   const pageSize = 36;
   const total = await prisma.country.count({ where });
@@ -148,7 +159,7 @@ export async function getCountryDirectory(query: string, requestedPage: number) 
   const page = Number.isSafeInteger(requestedPage) ? Math.min(pages, Math.max(1, requestedPage)) : 1;
   const [countries, nocs] = await Promise.all([
     prisma.country.findMany({ where, orderBy: [{ name: "asc" }, { id: "asc" }], skip: (page - 1) * pageSize, take: pageSize, select: { code: true, name: true, region: true, historicalName: true, activeFrom: true, activeTo: true, _count: { select: { athletes: true } }, committees: { select: { id: true, code: true, name: true, validFrom: true, validTo: true, _count: { select: { participations: true, medalResults: true } } } } } }),
-    prisma.nationalOlympicCommittee.findMany({ where: { countryId: null, ...(search ? { OR: [{ code: search.toUpperCase() }, ...names.map((term) => ({ name: { contains: term } }))] } : {}) }, orderBy: { code: "asc" }, select: { id: true, code: true, name: true, historicalNote: true, validFrom: true, validTo: true, _count: { select: { participations: true, medalResults: true } } } }),
+    prisma.nationalOlympicCommittee.findMany({ where: { countryId: null, ...(search ? { OR: [{ id: { in: nocIds } }, { code: search.toUpperCase() }, ...names.map((term) => ({ name: { contains: term } }))] } : {}) }, orderBy: { code: "asc" }, select: { id: true, code: true, name: true, historicalNote: true, validFrom: true, validTo: true, _count: { select: { participations: true, medalResults: true } } } }),
   ]);
   return { countries, independentNocs: nocs, total, page, pages, search };
 }

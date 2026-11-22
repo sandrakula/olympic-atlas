@@ -1,5 +1,7 @@
 "use client";
 
+import { useAtlasSuggestions } from "./use-atlas-suggestions";
+
 import { useReducedMotion } from "motion/react";
 import { ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, Snowflake, Sun } from "lucide-react";
 import { PostponementBadge } from "@/components/postponement-badge";
@@ -61,20 +63,22 @@ export function GamesExplorer({ games }: { games: CatalogGame[] }) {
   const [status, setStatus] = useState<StatusFilter>("HELD");
   const [period, setPeriod] = useState<PeriodFilter>("ALL");
   const [query, setQuery] = useState("");
+  const suggestions = useAtlasSuggestions(query, "search", true, "OlympicEdition");
   const [sort, setSort] = useState<"asc" | "desc">("asc");
   const reduceMotion = useReducedMotion();
 
   const held = useMemo(() => games.filter((game) => game.status === "HELD"), [games]);
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("ru-RU");
+    const matchingIds = new Set<string | undefined>(suggestions.map(({ node }) => node?.id));
     const [from, to] = periods[period];
     return games
       .filter((game) => season === "ALL" || game.season === season)
       .filter((game) => status === "ALL" || (status === "HELD" ? game.status === "HELD" : game.status !== "HELD"))
       .filter((game) => game.year >= from && game.year <= to)
-      .filter((game) => !normalized || `${game.year} ${game.heldYear ?? ""} ${game.name} ${game.hostCity} ${game.country ?? ""} ${game.slug.replaceAll("-", " ")}`.toLocaleLowerCase("ru-RU").includes(normalized))
+      .filter((game) => !normalized || matchingIds.has("OlympicEdition:" + game.id) || `${game.year} ${game.heldYear ?? ""} ${game.name} ${game.hostCity} ${game.country ?? ""} ${game.slug.replaceAll("-", " ")}`.toLocaleLowerCase("ru-RU").includes(normalized))
       .sort((a, b) => (sort === "asc" ? a.year - b.year : b.year - a.year) || a.season.localeCompare(b.season));
-  }, [games, period, query, season, sort, status]);
+  }, [games, period, query, season, sort, status, suggestions]);
 
   const participationData = useMemo(() => held
     .filter((game) => game.athleteCount)

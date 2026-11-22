@@ -1,10 +1,20 @@
 "use client";
 
-import { ArrowUpRight, BookOpen, CircleHelp, Clock3, Copy, Database, ExternalLink, LoaderCircle, Network, Search, X } from "lucide-react";
+import { ArrowUpRight, BookOpen, CalendarDays, CircleHelp, Clock3, Copy, Database, ExternalLink, Flag, LoaderCircle, Medal, Network, Search, UserRound, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
-import { examples, exploreLimits, ruleInfo, type Answer, type AnswerRow, type SearchPage } from "@/lib/explore/model";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type KeyboardEvent } from "react";
+import { examples, exploreLimits, ruleInfo, type Answer, type AnswerRow, type Correction, type SearchPage } from "@/lib/explore/model";
 import { graphTypes, type GraphNode } from "@/lib/graph/model";
+
+import { normalizeSearch, type MatchKind } from "@/lib/explore/search-text";
+import { useAtlasSuggestions, type Suggestion } from "./use-atlas-suggestions";
+
+const matchText: Record<MatchKind, string> = {
+  exact: "Точное совпадение", alias: "Алиас", normalized: "Совпадение написания", layout: "Другая раскладка",
+  prefix: "По началу имени", fts: "Совпадение по словам", fuzzy: "Возможная опечатка",
+  transliteration: "Транслитерация", similar: "Похожее написание",
+};
 
 type Mode = "question" | "search";
 type HistoryItem = { mode: Mode; query: string };
@@ -58,6 +68,13 @@ export function ExploreWorkspace({ initialQuery, initialAnswer, initialError = "
   const request = useRef<AbortController | null>(null);
   const field = useRef<HTMLInputElement>(null);
   const results = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [active, setActive] = useState(-1);
+  const [original, setOriginal] = useState("");
+  const suggestions = useAtlasSuggestions(query, mode, suggestionsOpen && !pending);
+  const expanded = suggestions.length > 0;
+  const activeOption = expanded && active >= 0 ? suggestions[active] : undefined;
   const history = readHistory(useSyncExternalStore(subscribe, sessionSnapshot, () => "[]"));
 
   useEffect(() => {
@@ -68,7 +85,7 @@ export function ExploreWorkspace({ initialQuery, initialAnswer, initialError = "
     }
   }, [result]);
 
-  async function submit(nextQuery: string, nextMode: Mode, page = 1) {
+  async function submit(nextQuery: string, nextMode: Mode, page = 1, previous = "") {
     const text = nextQuery.trim();
     if (!text) { field.current?.focus(); return; }
     request.current?.abort();
@@ -76,6 +93,8 @@ export function ExploreWorkspace({ initialQuery, initialAnswer, initialError = "
     request.current = controller;
     setMode(nextMode);
     setQuery(text);
+    closeSuggestions();
+    setOriginal(previous);
     setPending(true);
     setResult(null);
     setError("");
@@ -99,7 +118,44 @@ export function ExploreWorkspace({ initialQuery, initialAnswer, initialError = "
     }
   }
 
+  function closeSuggestions() {
+    setSuggestionsOpen(false);
+    setActive(-1);
+  }
+
+  function choose(item: Suggestion) {
+    if (mode === "search" && item.node) {
+      closeSuggestions();
+      remember({ query, mode });
+      router.push(item.node.href?.startsWith("/") ? item.node.href : graphHref(item.node));
+      return;
+    }
+    void submit(item.query, mode, 1, original || query);
+  }
+
+  function suggestionKeys(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.nativeEvent.isComposing) return;
+    if (event.key === "Escape" && suggestionsOpen) {
+      event.preventDefault();
+      closeSuggestions();
+    } else if (event.key === "Tab") {
+      closeSuggestions();
+    } else if (event.key === "Enter" && activeOption) {
+      event.preventDefault();
+      choose(activeOption);
+    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      setSuggestionsOpen(true);
+      if (!expanded) return;
+      event.preventDefault();
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      setActive(active < 0 ? (direction === 1 ? 0 : suggestions.length - 1) :
+        (active + direction + suggestions.length) % suggestions.length);
+    }
+  }
+
   function reset(nextMode: Mode, clear = false) {
+    closeSuggestions();
+    setOriginal("");
     request.current?.abort();
     setMode(nextMode);
     setResult(null);
@@ -137,10 +193,23 @@ export function ExploreWorkspace({ initialQuery, initialAnswer, initialError = "
             <div className="relative min-w-0 flex-1">
               <Search aria-hidden className="absolute left-4 top-4 size-5 text-[#55b9f3]" />
               <input ref={field} type="search" name="q" aria-label={mode === "question" ? "Вопрос об Олимпийских играх" : "Поиск по базе знаний"}
-                value={query} onChange={(event) => setQuery(event.target.value)} maxLength={exploreLimits.query}
+                role="combobox" aria-autocomplete="list" aria-expanded={expanded}
+                aria-controls={expanded ? "atlas-suggestions" : undefined}
+                aria-activedescendant={activeOption ? "atlas-option-" + active : undefined}
+                autoComplete="off" onFocus={() => setSuggestionsOpen(true)} onBlur={closeSuggestions} onKeyDown={suggestionKeys}
+                value={query} onChange={(event) => {
+                  if (pending) {
+                    request.current?.abort();
+                    setPending(false);
+                  }
+                  setQuery(event.target.value);
+                  setActive(-1);
+                  setSuggestionsOpen(true);
+                }} maxLength={exploreLimits.query}
                 placeholder={mode === "question" ? "Спросите об Олимпийских играх, спортсменах или медалях…" : "Имя, город, делегация или вид спорта"}
                 className={"atlas-input min-h-13 w-full appearance-none py-3 pr-12 pl-12 text-base text-white placeholder:text-[#a6b3c8] [&::-webkit-search-cancel-button]:hidden " + outline} />
               {query && <button type="button" onClick={() => reset(mode, true)} aria-label="Очистить запрос" className={"absolute top-1 right-1 grid size-11 place-items-center rounded-lg text-[#b4bfd0] hover:bg-white/10 " + outline}><X size={18} /></button>}
+              {expanded && <SuggestionList items={suggestions} query={query} active={active} onChoose={choose} />}
             </div>
             <button className={gold} disabled={!query.trim() || pending}>{pending ? <><LoaderCircle className="size-4 motion-safe:animate-spin" /> Ищу</> : "Найти"}</button>
           </div>
@@ -154,12 +223,16 @@ export function ExploreWorkspace({ initialQuery, initialAnswer, initialError = "
             <div aria-hidden className="mt-5 space-y-3 motion-safe:animate-pulse"><div className="h-3 w-4/5 rounded-full bg-[#20334f]" /><div className="h-3 w-3/5 rounded-full bg-[#20334f]" /></div>
           </div>}
           {error && <div role="alert" className={panel + " flex flex-wrap items-center justify-between gap-3 p-5 text-[#f5b8ab]"}>
-            <p>{error}</p><button className={button} onClick={() => void submit(submitted, mode)}>Повторить</button>
+            <p>{error}</p><button className={button} onClick={() => void submit(submitted, mode, 1, original)}>Повторить</button>
           </div>}
+          {result && (original || !!result.value.corrections?.length) && <CorrectionPicker
+            corrections={result.value.corrections ?? []} original={original}
+            onChoose={(item) => void submit(item.query, mode, 1, original || submitted)}
+            onRestore={() => void submit(original, mode)} />}
           {result?.mode === "question" && <AnswerView answer={result.value} copyMessage={copyMessage} onCopy={() => void copyAnswer(result.value)}
             onSearch={() => void submit(submitted, "search")} />}
           {result?.mode === "search" && <SearchView data={result.value} submitted={submitted}
-            onPage={(page) => void submit(submitted, "search", page)} />}
+            onPage={(page) => void submit(submitted, "search", page, original)} onQuestion={(question) => void submit(question, "question")} />}
           {!result && !pending && !error && <section className={panel + " p-5 sm:p-6"}>
             <h2 className="text-xl font-bold text-white">Вопросы к базе</h2>
 
@@ -189,6 +262,56 @@ export function ExploreWorkspace({ initialQuery, initialAnswer, initialError = "
       </div>
     </>
   );
+}
+
+function Highlight({ text, query }: { text: string; query: string }) {
+  const terms = normalizeSearch(query).split(" ").filter(Boolean);
+  return text.split(/([\p{L}\p{N}\p{M}]+)/gu).map((part, index) => {
+    const token = normalizeSearch(part);
+    const prefix = terms.filter((term) => token.startsWith(term)).sort((a, b) => b.length - a.length)[0];
+    return prefix ? <span key={index}><mark className="bg-transparent font-black text-[#a9dfff]">{part.slice(0, prefix.length)}</mark>{part.slice(prefix.length)}</span> : part;
+  });
+}
+
+function SuggestionList({ items, query, active, onChoose }: {
+  items: Suggestion[]; query: string; active: number; onChoose: (item: Suggestion) => void;
+}) {
+  return <ul id="atlas-suggestions" role="listbox" aria-label="Подсказки поиска"
+    className="relative z-30 mt-2 max-h-[min(24rem,48vh)] sm:absolute sm:inset-x-0 sm:top-full overflow-y-auto rounded-xl border border-[#55b9f3]/45 bg-[#101d31] p-1.5 shadow-xl shadow-[#050a14]/70 motion-safe:animate-[analytics-enter_160ms_ease-out]">
+    {items.map((item, index) => {
+      const type = item.node?.type;
+      const Icon = type === "Athlete" ? UserRound : type === "OlympicEdition" ? CalendarDays :
+        type === "Country" || type === "NationalOlympicCommittee" ? Flag : type === "KnowledgeSource" ? BookOpen : type ? Medal : CircleHelp;
+      return <li key={item.node?.id ?? item.query} id={"atlas-option-" + index} role="option" aria-selected={active === index}
+        onMouseDown={(event) => event.preventDefault()} onClick={() => onChoose(item)}
+        ref={(element) => { if (active === index) element?.scrollIntoView({ block: "nearest" }); }}
+        className={"flex min-h-13 cursor-pointer items-start gap-3 rounded-lg border px-3 py-2 text-sm " +
+          (active === index ? "border-[#d6ad60]/60 bg-[#d6ad60]/12" : "border-transparent hover:bg-[#55b9f3]/10")}>
+        <Icon aria-hidden size={18} className="mt-1 shrink-0 text-[#55b9f3]" />
+        <div className="min-w-0 text-[#e4edf9]">
+          <p className="font-semibold wrap-anywhere"><Highlight text={item.query} query={query} /></p>
+          {item.node && type ? <p className="mt-0.5 text-xs leading-5 text-[#aebed2]">
+            <span className="text-[#a9dfff]">{graphTypes[type].label}</span> · {item.node.detail ? item.node.detail.slice(0, 90) + " · " : ""}{matchText[item.node.match]}
+            {item.node.matchedText !== item.node.label && <span className="wrap-anywhere"> · <Highlight text={item.node.matchedText} query={query} /></span>}
+          </p> : <p className="mt-0.5 text-xs text-[#a9dfff]">Исправление формулировки</p>}
+        </div>
+      </li>;
+    })}
+  </ul>;
+}
+
+function CorrectionPicker({ corrections, original, onChoose, onRestore }: {
+  corrections: Correction[]; original: string; onChoose: (item: Correction) => void; onRestore: () => void;
+}) {
+  return <section aria-label="Исправления запроса" className={panel + " p-4 sm:p-5"}>
+    {corrections.length > 0 && <>
+      <h2 className="font-bold text-[#e8c885]">{corrections.length === 1 ? "Возможно, вы имели в виду" : "Возможные варианты запроса"}</h2>
+      <ul className="mt-2 flex flex-wrap gap-2">{corrections.map((item) => <li key={item.node?.id ?? item.query}>
+        <button className={button + " text-left wrap-anywhere"} onClick={() => onChoose(item)}>{item.query}</button>
+      </li>)}</ul>
+    </>}
+    {original && <button className={button + (corrections.length ? " mt-3" : "")} onClick={onRestore}>Вернуться к исходному запросу</button>}
+  </section>;
 }
 
 function ModeButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
@@ -280,12 +403,13 @@ function MedalTable({ rows }: { rows: AnswerRow[] }) {
   </table>;
 }
 
-function SearchView({ data, submitted, onPage }: { data: SearchPage; submitted: string; onPage: (page: number) => void }) {
+function SearchView({ data, submitted, onPage, onQuestion }: { data: SearchPage; submitted: string; onPage: (page: number) => void; onQuestion: (question: string) => void }) {
   return <section className={panel + " p-5 sm:p-7"}>
     <h2 role="status" className="text-2xl font-bold text-white">{data.hits.length ? "Совпадения в базе" : "Совпадений нет"}</h2>
     <p className="mt-2 text-sm wrap-anywhere text-[#aebed2]">Запрос «{submitted}» · страница {data.page}</p>
+    {data.relatedQuestion && <button type="button" className={button + " mt-3"} onClick={() => onQuestion(data.relatedQuestion!)}>Показать подтверждённых участников</button>}
     {!data.hits.length && <p className="mt-4 text-[#aebed2]">Попробуйте имя, код НОК или начало слова.</p>}
-    <div className="mt-5 grid gap-3 sm:grid-cols-2">{data.hits.map((hit) => <ResultCard key={hit.id} node={hit} title={hit.label} detail={hit.excerpt} />)}</div>
+    <div className="mt-5 grid gap-3 sm:grid-cols-2">{data.hits.map((hit) => <ResultCard key={hit.id} node={hit} title={hit.label} detail={matchText[hit.match] + (hit.excerpt ? " · " + hit.excerpt : "")} />)}</div>
     {(data.page > 1 || data.more) && <nav aria-label="Страницы поиска" className="mt-4 flex flex-wrap gap-2">
       <button className={button} disabled={data.page <= 1} onClick={() => onPage(data.page - 1)}>Предыдущая</button>
       <button className={button} disabled={!data.more} onClick={() => onPage(data.page + 1)}>Следующая</button>

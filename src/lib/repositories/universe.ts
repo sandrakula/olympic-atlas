@@ -9,6 +9,7 @@ import { indicators } from "@/lib/analytics";
 import { prisma } from "@/lib/prisma";
 import { getEditionStatisticSources, verifyEditionStatistics } from "./edition-statistics";
 import { getGraphNodes } from "./graph";
+import { dictionaryMatches, searchKinds as indexedKinds } from "./search-dictionary";
 import { chronologicalOrder, editionColumns, scopedFacts } from "./universe-scope";
 
 const { sql, empty, raw, join } = Prisma;
@@ -297,8 +298,12 @@ export async function searchUniverse(query: string, filters: UniverseFilters): P
   const prefix = scopedFacts(filters);
   const constrained = Boolean(filters.era || filters.season || filters.sport || filters.geography);
   const types = filters.type ? [filters.type] : searchKinds;
+  const indexedTypes = indexedKinds.filter((kind) => types.includes(kind));
+  const candidates = indexedTypes.length ? dictionaryMatches(term, indexedTypes).filter(({ match }) => match !== "similar") : [];
   const groups = await Promise.all(types.map(async (kind) => {
     const fields = searchFields[kind];
+    const ids = candidates.filter((row) => row.kind === kind).slice(0, 200).map(({ entityId }) => entityId);
+    const smartMatch = ids.length ? sql`OR r.id IN (${join(ids)})` : empty;
     const match = (suffix: string) => fields.flatMap((field) => variants.map((variant) => sql`${raw(field)} LIKE ${suffix + escaped(variant) + "%"} ESCAPE '!'`));
     const cityYear = /^(.+?)\s+(\d{4})$/.exec(term);
     const cityMatch = kind === "OlympicEdition" && cityYear ? sql`OR ((r.year = ${Number(cityYear[2])} OR r.heldYear = ${Number(cityYear[2])})
@@ -306,7 +311,7 @@ export async function searchUniverse(query: string, filters: UniverseFilters): P
     const sportForAthlete = kind === "Athlete" ? sql`(SELECT sportId FROM p WHERE p.athleteId = l.id AND p.editionId = l.edition ORDER BY p.id LIMIT 1)` : sql`NULL`;
     const rows = await prisma.$queryRaw<{ id: number; edition: number | null; year: number | null; editionLabel: string | null; sportId: number | null; sportName: string | null }[]>(sql`${prefix},
       hits AS (
-        SELECT r.id FROM ${raw(kind)} r WHERE (${join(match("%"), " OR ")} ${cityMatch})
+        SELECT r.id FROM ${raw(kind)} r WHERE (${join(match("%"), " OR ")} ${cityMatch} ${smartMatch})
         ${constrained || kind === "OlympicEdition" ? sql`AND EXISTS (SELECT 1 FROM members b WHERE b.kind = ${kind} AND b.id = r.id)` : empty}
         ORDER BY (${join(match(""), " OR ")}) DESC, ${raw(fields[0])}, r.id LIMIT ${universeLimits.search}
       ), located AS (

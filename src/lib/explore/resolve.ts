@@ -1,7 +1,7 @@
 import { Prisma } from "@/generated/prisma/client";
 import { type GraphId, type GraphNode } from "@/lib/graph/model";
 import { prisma } from "@/lib/prisma";
-import { makeMatch, searchAtlas, searchTokens } from "@/lib/repositories/explore-search";
+import { confirmedEntities, makeMatch, searchTokens } from "@/lib/repositories/explore-search";
 import { getGraphNodes } from "@/lib/repositories/graph";
 import type { Season } from "./model";
 
@@ -15,7 +15,7 @@ const aliases: Partial<Record<EntityType, Record<string, string>>> = {
     "бразилии": "BRA", "brazil": "BRA", "германии": "DEU", "канаде": "CAN",
   },
   NationalOlympicCommittee: { "сша": "USA", "united states": "USA", "францию": "FRA", "великобританию": "GBR", "китай": "CHN", "грецию": "GRE" },
-  Athlete: { "майкла фелпса": "michael phelps", "фелпса": "фелпс", "симоны байлз": "simone biles" },
+  Athlete: { "майкла фелпса": "michael phelps", "фелпса": "michael phelps", "симоны байлз": "simone biles" },
 };
 
 const cities: Record<string, string> = {
@@ -31,9 +31,7 @@ export async function resolveEntity(type: EntityType, input: string): Promise<Gr
   if (!name) return [];
   if (type === "OlympicEdition") return resolveEdition(name);
   const query = aliasOf(aliases[type], name);
-  const { hits } = await searchAtlas(query, 1, type, true);
-  const exact = hits.filter((node) => normalize(node.label) === name || normalize(node.label) === query);
-  return exact.length ? exact : hits;
+  return confirmedEntities(query, type);
 }
 
 async function resolveEdition(name: string) {
@@ -47,17 +45,13 @@ async function resolveEdition(name: string) {
     const editions = await prisma.olympicEdition.findMany({ where: { season, OR: [{ year }, { heldYear: year }] }, select: { id: true }, orderBy: { id: "asc" }, take: 8 });
     return getGraphNodes(editions.map(({ id }): GraphId => `OlympicEdition:${id}`));
   }
-  const query = cityWords.map((word) => aliasOf(cities, word)).join(" ");
-  const match = makeMatch(query, true);
-  if (!match) return [];
-  const rows = await prisma.$queryRaw<{ id: number }[]>`
-    SELECT g.id FROM AtlasSearch JOIN OlympicEdition g ON g.id = AtlasSearch.entityId
-    WHERE AtlasSearch MATCH ${match} AND AtlasSearch.kind = 'OlympicEdition'
-      ${season ? Prisma.sql`AND g.season = ${season}` : Prisma.empty}
-      ${year ? Prisma.sql`AND (g.year = ${year} OR g.heldYear = ${year})` : Prisma.empty}
-    ORDER BY g.year DESC, g.id LIMIT 8
-  `;
-  return getGraphNodes(rows.map(({ id }): GraphId => `OlympicEdition:${id}`));
+  const query = aliasOf(cities, cityWords.join(" "));
+  const matches = await confirmedEntities([query, year].filter(Boolean).join(" "), "OlympicEdition");
+  if (!season || !matches.length) return matches;
+  const matchingIds = new Set((await prisma.olympicEdition.findMany({
+    where: { season, id: { in: matches.map((node) => Number(node.id.split(":")[1])) } }, select: { id: true },
+  })).map(({ id }) => `OlympicEdition:${id}`));
+  return matches.filter(({ id }) => matchingIds.has(id));
 }
 
 export async function resolveEvent(editionId: number, text: string) {

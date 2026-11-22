@@ -161,7 +161,7 @@ test("graph search, neighborhoods, sources and navigation from a logical answer"
   await inspector.getByRole("button", { name: "Найти путь" }).click();
   await expect(inspector.getByRole("list", { name: "Найденный путь" }).getByRole("listitem")).toHaveCount(3);
   await page.goto("/explore");
-  const question = page.getByRole("searchbox", { name: "Вопрос об Олимпийских играх" });
+  const question = page.getByRole("combobox", { name: "Вопрос об Олимпийских играх" });
   await question.fill("На каких Олимпиадах выступала Симона Байлз?");
   await page.getByRole("button", { name: "Найти", exact: true }).click();
   await expect(page.locator("#atlas-answer")).toBeVisible();

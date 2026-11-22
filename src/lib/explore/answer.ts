@@ -4,6 +4,7 @@ import { getGraphNodes } from "@/lib/repositories/graph";
 import { interpretQuestion, type Question } from "./interpret";
 import { exploreLimits, type Answer, type Fact, type FactEvidence } from "./model";
 import { resolveEntity, resolveEvent } from "./resolve";
+import { questionCorrections } from "./question-corrections";
 import { runRule, type ResolvedQuestion } from "./rules";
 import type { GraphNode } from "@/lib/graph/model";
 
@@ -79,10 +80,13 @@ async function resolveQuestion(question: Question, found: GraphNode[]): Promise<
 export async function answerQuestion(input: string): Promise<Answer> {
   const initial = { entities: [], rows: [], facts: [] };
   const question = interpretQuestion(input);
-  if (!question) return { ...initial, status: "unrecognized", intent: null,
-    summary: input.length > exploreLimits.query ? `Сократите вопрос до ${exploreLimits.query} символов.` :
-      "Этот вопрос не соответствует поддерживаемым формулировкам. Выберите пример, уточните вопрос или воспользуйтесь поиском по базе.",
-  };
+  if (!question) {
+    const corrections = await questionCorrections(input);
+    const summary = input.length > exploreLimits.query ? `Сократите вопрос до ${exploreLimits.query} символов.` :
+      corrections.length ? "Подтвердите исправленную формулировку, чтобы получить ответ." :
+        "Этот вопрос не соответствует поддерживаемым формулировкам. Выберите пример, уточните вопрос или воспользуйтесь поиском по базе.";
+    return { ...initial, corrections, status: "unrecognized", intent: null, summary };
+  }
 
   const entities: GraphNode[] = [];
   let resolved: ResolvedQuestion;
@@ -92,6 +96,7 @@ export async function answerQuestion(input: string): Promise<Answer> {
     if (!(error instanceof ResolutionError)) throw error;
     return { ...initial, intent: question.intent, status: error.matches.length ? "ambiguous" : "not_found",
       summary: error.message, entities: [...entities, ...error.matches],
+      corrections: error.matches.length ? [] : await questionCorrections(input),
     };
   }
 

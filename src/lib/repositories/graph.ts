@@ -1,5 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { dictionaryMatches, searchKinds } from "./search-dictionary";
 import { findBoundedPath } from "@/lib/graph/path";
 import {
   graphTypesList, limits, parseGraphId, type GraphEdge, type GraphEvidence,
@@ -11,7 +12,7 @@ type GraphDatabase = Pick<typeof prisma, "$queryRaw">;
 // These SQL expressions are schema constants. Request parameters are always bound separately.
 const entities = {
   OlympicEdition: { label: "t.hostCity || ' ' || t.year", detail: "CASE t.season WHEN 'WINTER' THEN 'Зимние' ELSE 'Летние' END || ' · ' || t.name", ref: "t.slug", search: "t.name" },
-  Athlete: { label: "t.fullName", detail: "coalesce(t.specialty, 'Профиль спортсмена')", ref: "t.slug", search: "t.alternateNames" },
+  Athlete: { label: "t.fullName", detail: "coalesce(t.specialty, (SELECT s.name FROM Participation p JOIN Sport s ON s.id = p.sportId WHERE p.athleteId = t.id ORDER BY p.id LIMIT 1), 'Профиль спортсмена')", ref: "t.slug", search: "t.alternateNames" },
   Country: { label: "t.name", detail: "t.code || ' · ' || t.region", ref: "t.code", search: "coalesce(t.historicalName, '') || ' ' || t.code" },
   NationalOlympicCommittee: { label: "t.name", detail: "t.code || coalesce(' · ' || t.validFrom || '–' || coalesce(t.validTo, 'н. в.'), '')", search: "t.code || ' ' || coalesce(t.shortName, '')" },
   Sport: { label: "t.name", detail: "t.description", ref: "t.slug" },
@@ -91,7 +92,13 @@ export async function searchGraph(query: string, types: GraphType[] = graphTypes
     return result.map((row) => nodeFromRow(type, row));
   }));
   // Round-robin keeps a broad search from burying entire entity types.
-  return Array.from({ length: limits.search }, (_, index) => rows.flatMap((group) => group[index] ? [group[index]] : [])).flat().slice(0, limits.search);
+  const matchingTypes = searchKinds.filter((type) => types.includes(type));
+  const ranked = matchingTypes.length ? dictionaryMatches(name, matchingTypes)
+    .filter(({ match }) => match !== "similar").slice(0, limits.search) : [];
+  const ids = ranked.map(({ kind, entityId }): GraphId => `${kind}:${entityId}`);
+  const nodes = new Map((await getNodes(ids)).map((node) => [node.id, node]));
+  const ordinary = Array.from({ length: limits.search }, (_, index) => rows.flatMap((group) => group[index] ? [group[index]] : [])).flat();
+  return [...new Map([...ids.flatMap((id) => nodes.get(id) ?? []), ...ordinary].map((node) => [node.id, node])).values()].slice(0, limits.search);
 }
 
 type Relation = {
