@@ -1,0 +1,313 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum OlympicSeason {
+  SUMMER
+  WINTER
+}
+
+enum OlympicEditionStatus {
+  HELD
+  CANCELLED
+  INTERCALATED
+}
+
+enum MedalType {
+  GOLD
+  SILVER
+  BRONZE
+}
+
+enum ResultType {
+  INDIVIDUAL
+  TEAM
+}
+
+enum SourceReliability {
+  OFFICIAL
+  AUTHORITATIVE
+  UNREVIEWED
+}
+
+model OlympicEdition {
+  id              Int                  @id @default(autoincrement())
+  slug            String               @unique
+  name            String
+  year            Int
+  heldYear        Int?
+  season          OlympicSeason
+  status          OlympicEditionStatus @default(HELD)
+  startDate       DateTime?
+  endDate         DateTime?
+  hostCity        String
+  description     String
+  historicalNote  String?
+  athleteCount    Int?
+  delegationCount Int?
+  sportCount      Int?
+  eventCount      Int?
+  statisticsNote  String?
+  imageUrl        String?
+  imageSourceUrl  String?
+  imageAuthor     String?
+  imageLicense    String?
+  imageAlt        String?
+  hostCountryId   Int?
+  hostCountry     Country?             @relation("HostedEditions", fields: [hostCountryId], references: [id], onDelete: SetNull)
+  events          Event[]
+  participations  Participation[]
+  teams           Team[]
+  venues          Venue[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@unique([year, season])
+  @@index([hostCountryId])
+  @@index([status, year])
+  @@index([season, year])
+}
+
+model Country {
+  id             Int                        @id @default(autoincrement())
+  code           String                     @unique
+  name           String
+  region         String
+  historicalName String?
+  activeFrom     Int?
+  activeTo       Int?
+  athletes       Athlete[]
+  committees     NationalOlympicCommittee[]
+  hostedEditions OlympicEdition[]           @relation("HostedEditions")
+  venues         Venue[]
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+
+  @@index([region])
+}
+
+model NationalOlympicCommittee {
+  id             Int             @id @default(autoincrement())
+  code           String          @unique
+  name           String
+  shortName      String?
+  countryId      Int?
+  validFrom      Int?
+  validTo        Int?
+  historicalNote String?
+  country        Country?        @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  medalResults   MedalResult[]
+  participations Participation[]
+  teams          Team[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([countryId])
+  @@index([validFrom, validTo])
+}
+
+model Athlete {
+  id              Int             @id @default(autoincrement())
+  slug            String          @unique
+  fullName        String
+  alternateNames  String          @default("[]")
+  birthDate       DateTime?
+  deathDate       DateTime?
+  birthPlace      String?
+  gender          String?
+  biography       String
+  specialty       String?
+  wikidataId      String?         @unique
+  olympicsId      String?         @unique
+  externalIds     String          @default("{}")
+  imageUrl        String?
+  imageSourceUrl  String?
+  imageAuthor     String?
+  imageLicense    String?
+  imageLicenseUrl String?
+  imageAlt        String?
+  dataStatus      String          @default("BASIC")
+  countryId       Int?
+  country         Country?        @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  medalResults    MedalResult[]
+  participations  Participation[]
+  teamMemberships TeamMember[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([countryId])
+  @@index([fullName])
+  @@index([dataStatus])
+  @@index([birthDate])
+}
+
+model Sport {
+  id             Int             @id @default(autoincrement())
+  slug           String          @unique
+  name           String          @unique
+  description    String
+  disciplines    Discipline[]
+  participations Participation[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Discipline {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique
+  name      String
+  sportId   Int
+  sport     Sport    @relation(fields: [sportId], references: [id], onDelete: Cascade)
+  events    Event[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sportId, name])
+  @@index([sportId])
+}
+
+model Event {
+  id           Int            @id @default(autoincrement())
+  slug         String         @unique
+  name         String
+  gender       String?
+  editionId    Int
+  disciplineId Int
+  venueId      Int?
+  edition      OlympicEdition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  discipline   Discipline     @relation(fields: [disciplineId], references: [id])
+  venue        Venue?         @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  medalResults MedalResult[]
+  teams        Team[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([editionId, disciplineId, name, gender])
+  @@index([editionId])
+  @@index([disciplineId])
+  @@index([venueId])
+}
+
+model Participation {
+  id        Int                      @id @default(autoincrement())
+  athleteId Int
+  editionId Int
+  nocId     Int
+  sportId   Int
+  note      String?
+  athlete   Athlete                  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  edition   OlympicEdition           @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  noc       NationalOlympicCommittee @relation(fields: [nocId], references: [id])
+  sport     Sport                    @relation(fields: [sportId], references: [id])
+  createdAt DateTime                 @default(now())
+  updatedAt DateTime                 @updatedAt
+
+  @@unique([athleteId, editionId, nocId, sportId])
+  @@index([editionId, nocId])
+  @@index([sportId])
+}
+
+model Team {
+  id           Int                      @id @default(autoincrement())
+  slug         String                   @unique
+  name         String
+  editionId    Int
+  nocId        Int
+  eventId      Int?
+  edition      OlympicEdition           @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  noc          NationalOlympicCommittee @relation(fields: [nocId], references: [id])
+  event        Event?                   @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  members      TeamMember[]
+  medalResults MedalResult[]
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+
+  @@unique([editionId, nocId, name])
+  @@index([eventId])
+  @@index([nocId])
+}
+
+model TeamMember {
+  id        Int      @id @default(autoincrement())
+  teamId    Int
+  athleteId Int
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  athlete   Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([teamId, athleteId])
+  @@index([athleteId])
+}
+
+model MedalResult {
+  id         Int                      @id @default(autoincrement())
+  resultKey  String                   @unique
+  medal      MedalType
+  resultType ResultType               @default(INDIVIDUAL)
+  rank       Int
+  resultText String?
+  eventId    Int
+  athleteId  Int?
+  teamId     Int?
+  nocId      Int
+  event      Event                    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  athlete    Athlete?                 @relation(fields: [athleteId], references: [id], onDelete: SetNull)
+  team       Team?                    @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  noc        NationalOlympicCommittee @relation(fields: [nocId], references: [id])
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+
+  @@index([eventId, medal])
+  @@index([athleteId])
+  @@index([teamId])
+  @@index([nocId])
+}
+
+model Venue {
+  id        Int            @id @default(autoincrement())
+  name      String
+  city      String
+  countryId Int?
+  editionId Int
+  country   Country?       @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  edition   OlympicEdition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  events    Event[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([editionId, name])
+  @@index([countryId])
+  @@index([editionId])
+}
+
+model KnowledgeSource {
+  id          Int               @id @default(autoincrement())
+  title       String
+  url         String            @unique
+  publisher   String
+  publishedAt DateTime?
+  accessedAt  DateTime
+  reliability SourceReliability @default(UNREVIEWED)
+  citations   FactCitation[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model FactCitation {
+  id         Int             @id @default(autoincrement())
+  sourceId   Int
+  entityType String
+  entityId   Int
+  fieldName  String
+  note       String?
+  source     KnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  createdAt  DateTime        @default(now())
+
+  @@unique([sourceId, entityType, entityId, fieldName])
+  @@index([entityType, entityId])
+}
